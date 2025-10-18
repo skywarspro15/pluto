@@ -26,7 +26,12 @@ export default {
       },
     });
 
-    Root.Lib.setOnEnd((_) => cameraWindow.close());
+    let stream = null;
+    Root.Lib.setOnEnd((_) => {
+      cameraWindow.close();
+      const tracks = stream.getTracks();
+      tracks.forEach((track) => track.stop());
+    });
 
     wrapper = cameraWindow.window.querySelector(".win-content");
 
@@ -63,8 +68,6 @@ export default {
     let canvas = new Html("canvas")
       .attr({ style: "display: none;" })
       .appendTo(wrapper);
-
-    let stream = null;
 
     async function initCamera() {
       try {
