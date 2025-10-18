@@ -343,112 +343,146 @@ export default {
               this.clear();
 
               // Visual category name
-              let categoryName = "";
+              let categoryName =
+                category === "all"
+                  ? "Discover"
+                  : category[0].toUpperCase() + category.substring(1);
 
-              if (category === "all") {
-                categoryName = "Discover";
-              } else {
-                categoryName =
-                  category[0].toUpperCase() + category.substring(1);
-              }
-
-              new Html("h2")
+              const headerContainer = new Html("div")
+                .class("row", "ac") // Use flexbox utilities
                 .style({
-                  margin: "12px 8px 0px 0px",
                   "background-image":
-                    "linear-gradient(to bottom, var(--root) 65%, rgba(var(--root-rgb), 0))",
-                  padding: "8px 12px 8px 12px",
+                    "linear-gradient(to bottom, var(--root) 85%, rgba(var(--root-rgb), 0))",
+                  padding: "8px 12px",
                   margin: "0",
                   position: "sticky",
-                  height: "48px",
-                  "background-color": "transparent",
-                  "z-index": "1",
                   top: "0",
-                  display: "flex",
-                  "align-items": "center",
+                  "z-index": "1",
+                  "justify-content": "space-between",
                 })
+                .appendTo(container);
+
+              new Html("h2")
+                .style({ margin: "0", padding: "0" })
                 .text(categoryName)
-                .appendTo(container);
+                .appendTo(headerContainer);
 
-              // Sort apps by date for the "Recently Updated" section
-              const sortedApps = [...packageList].sort(
-                (a, b) =>
-                  new Date(b.versions[0].date) - new Date(a.versions[0].date)
-              );
-              const recentlyUpdated = sortedApps.slice(0, 2);
-
-              if (category === "all") {
-                new Html("h2")
-                  .text("Recently Updated")
-                  .style({ padding: "0 12px" })
-                  .appendTo(container);
-                const featuredContainer = new Html("div")
-                  .class("row", "gap", "padded")
-                  .style({ flexWrap: "wrap" })
-                  .appendTo(container);
-
-                for (let appObj of recentlyUpdated) {
-                  let app = Object.assign(appObj, {
-                    repoUrl: repoHost + appObj.id,
-                  });
-                  const pkg = app.id;
-
-                  const appBannerUrl = app.assets.banner
-                    ? `${host}pkgs/${pkg}/${app.assets.banner}`
-                    : `${host}pkgs/${pkg}/${app.assets.icon}`;
-
-                  new Html("div")
-                    .class("card", "col", "gap")
-                    .style({ flex: "1", minWidth: "250px", cursor: "pointer" })
-                    .on("click", () => pages.appPage(app, pkg))
-                    .appendMany(
-                      new Html("div").class("app-banner").style({
-                        "--url": `url(${appBannerUrl})`,
-                        height: "150px",
-                        borderRadius: "8px",
-                      }),
-                      new Html("div")
-                        .class("col")
-                        .appendMany(
-                          new Html("span").class("h3").text(app.name),
-                          new Html("span")
-                            .class("label")
-                            .text(app.shortDescription)
-                        )
-                    )
-                    .appendTo(featuredContainer);
-                }
-              }
-
-              const appsListContainer = new Html("div")
-                .class("apps", "ovh", "fg")
-                .appendTo(container);
-
-              if (category === "all") {
-                new Html("h2")
-                  .text("All Apps")
-                  .style({ padding: "0 12px" })
-                  .appendTo(appsListContainer);
-              }
-
-              const appsGrid = new Html("div")
-                .style({
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                  gap: "8px",
-                  padding: "12px",
+              const searchInput = new Html("input")
+                .attr({
+                  type: "text",
+                  placeholder: "Search...",
                 })
-                .appendTo(appsListContainer);
+                .style({
+                  margin: "0", // Override default margin from style.css
+                })
+                .appendTo(headerContainer);
 
-              async function renderAppsList() {
-                const appsToRender =
+              const contentWrapper = new Html("div").appendTo(container);
+
+              searchInput.on("input", () => renderPageContent());
+
+              function renderPageContent() {
+                contentWrapper.clear();
+                const searchQuery = searchInput.getValue().toLowerCase().trim();
+
+                const appsToRenderBase =
                   category === "all"
                     ? packageList
                     : packageList.filter(
                         (app) => String(app.category).toLowerCase() === category
                       );
 
-                for (let appObj of appsToRender) {
+                const filteredApps = searchQuery
+                  ? appsToRenderBase.filter(
+                      (app) =>
+                        app.name.toLowerCase().includes(searchQuery) ||
+                        app.shortDescription
+                          .toLowerCase()
+                          .includes(searchQuery) ||
+                        app.description.toLowerCase().includes(searchQuery) ||
+                        app.author.toLowerCase().includes(searchQuery)
+                    )
+                  : appsToRenderBase;
+
+                if (category === "all" && !searchQuery) {
+                  const sortedApps = [...packageList].sort(
+                    (a, b) =>
+                      new Date(b.versions[0].date) -
+                      new Date(a.versions[0].date)
+                  );
+                  const recentlyUpdated = sortedApps.slice(0, 2);
+
+                  new Html("h2")
+                    .text("Recently Updated")
+                    .appendTo(contentWrapper);
+                  const featuredContainer = new Html("div")
+                    .class("row", "gap", "padded")
+                    .style({ flexWrap: "wrap" })
+                    .appendTo(contentWrapper);
+
+                  for (let appObj of recentlyUpdated) {
+                    let app = Object.assign(appObj, {
+                      repoUrl: repoHost + appObj.id,
+                    });
+                    const pkg = app.id;
+
+                    const appBannerUrl = app.assets.banner
+                      ? `${host}pkgs/${pkg}/${app.assets.banner}`
+                      : `${host}pkgs/${pkg}/${app.assets.icon}`;
+
+                    new Html("div")
+                      .class("card", "col", "gap")
+                      .style({
+                        flex: "1",
+                        minWidth: "250px",
+                        cursor: "pointer",
+                      })
+                      .on("click", () => pages.appPage(app, pkg))
+                      .appendMany(
+                        new Html("div").class("app-banner").style({
+                          "--url": `url(${appBannerUrl})`,
+                          height: "150px",
+                          borderRadius: "8px",
+                        }),
+                        new Html("div")
+                          .class("col")
+                          .appendMany(
+                            new Html("span").class("h3").text(app.name),
+                            new Html("span")
+                              .class("label")
+                              .text(app.shortDescription)
+                          )
+                      )
+                      .appendTo(featuredContainer);
+                  }
+                }
+
+                const appsListContainer = new Html("div")
+                  .class("apps", "ovh", "fg")
+                  .appendTo(contentWrapper);
+
+                if (category === "all" && !searchQuery) {
+                  new Html("h2").text("All Apps").appendTo(appsListContainer);
+                }
+
+                const appsGrid = new Html("div")
+                  .style({
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(220px, 1fr))",
+                    gap: "8px",
+                    padding: "12px",
+                  })
+                  .appendTo(appsListContainer);
+
+                if (filteredApps.length === 0) {
+                  new Html("div")
+                    .class("padded")
+                    .text("No apps found.")
+                    .appendTo(appsGrid);
+                }
+
+                for (let appObj of filteredApps) {
                   let app = Object.assign(appObj, {
                     repoUrl: repoHost + appObj.id,
                   });
@@ -505,7 +539,7 @@ export default {
                 }
               }
 
-              renderAppsList();
+              renderPageContent();
             },
             async appPage(app, pkg) {
               this.clear();
@@ -652,7 +686,9 @@ export default {
                 )
                 .appendTo(container);
 
-              const rtf = new Intl.RelativeTimeFormat("en", { style: "short" });
+              const rtf = new Intl.RelativeTimeFormat("en", {
+                style: "short",
+              });
 
               new Html("div")
                 .class("app-whats-new")
