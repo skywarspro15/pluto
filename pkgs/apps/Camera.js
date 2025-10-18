@@ -12,6 +12,7 @@ export default {
   exec: async function (Root) {
     let wrapper;
     let cameraWindow;
+    let onWindowClose;
     let Html = Root.Lib.html;
     let FileMappings = await Root.Lib.loadLibrary("FileMappings");
 
@@ -31,7 +32,7 @@ export default {
       width: 670,
       height: 470,
       onclose: () => {
-        Root.Lib.onEnd();
+        onWindowClose();
       },
     });
 
@@ -433,16 +434,15 @@ export default {
       }
     })();
 
-    cameraWindow.onclose = async () => {
+    onWindowClose = async () => {
       if (ended) return;
-      ended = true;
       try {
         await stopStream();
       } catch (e) {
         /* ignore */
       }
+      ended = true;
       try {
-        // signal runtime that the app ended (this will call the setOnEnd handler above which is safe)
         Root.Lib.onEnd();
       } catch (e) {
         /* ignore */
