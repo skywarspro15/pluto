@@ -1,5 +1,5 @@
 export default {
-  name: "Browser",
+  name: "Browser (Beta)",
   description: "Search the internet.",
   ver: "v1.6.2", // Supports minimum Core version of v1.6.2
   type: "process",
