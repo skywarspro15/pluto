@@ -26,8 +26,8 @@ export default {
         title: Root.Lib.getString("systemApp_AppStore"),
         pid: Root.PID,
         // width: "620px",
-        width: 700,
-        height: 400,
+        width: 960,
+        height: 540,
         // height: "350px",
         onclose: () => {
           Root.Lib.onEnd();
@@ -353,7 +353,6 @@ export default {
               }
 
               new Html("h2")
-                // .style({ margin: "12px 8px 0 0" })
                 .style({
                   margin: "12px 8px 0px 0px",
                   "background-image":
@@ -371,39 +370,85 @@ export default {
                 .text(categoryName)
                 .appendTo(container);
 
-              // const searchBar = new Html("div")
-              //   .class("search-bar")
-              //   .appendMany(
-              //     new Html("input")
-              //       .attr({
-              //         placeholder: "Search apps",
-              //       })
-              //       .class("transparent", "m-0", "pad")
-              //       .on("input", (e) => {
-              //         console.log(e.target.value);
-              //       })
-              //   )
-              //   .appendTo(container);
+              // Sort apps by date for the "Recently Updated" section
+              const sortedApps = [...packageList].sort(
+                (a, b) =>
+                  new Date(b.versions[0].date) - new Date(a.versions[0].date)
+              );
+              const recentlyUpdated = sortedApps.slice(0, 2);
 
-              // const fuzzySearch = function (term, ratio) {
-              //   var string = this.toLowerCase();
-              //   var compare = term.toLowerCase();
-              //   var matches = 0;
-              //   if (string.indexOf(compare) > -1) return true; // covers basic partial matches
-              //   for (var i = 0; i < compare.length; i++) {
-              //     string.indexOf(compare[i]) > -1
-              //       ? (matches += 1)
-              //       : (matches -= 1);
-              //   }
-              //   return matches / this.length >= ratio || term == "";
-              // };
+              if (category === "all") {
+                new Html("h2")
+                  .text("Recently Updated")
+                  .style({ padding: "0 12px" })
+                  .appendTo(container);
+                const featuredContainer = new Html("div")
+                  .class("row", "gap", "padded")
+                  .style({ flexWrap: "wrap" })
+                  .appendTo(container);
 
-              const appsList = new Html("div")
+                for (let appObj of recentlyUpdated) {
+                  let app = Object.assign(appObj, {
+                    repoUrl: repoHost + appObj.id,
+                  });
+                  const pkg = app.id;
+
+                  const appBannerUrl = app.assets.banner
+                    ? `${host}pkgs/${pkg}/${app.assets.banner}`
+                    : `${host}pkgs/${pkg}/${app.assets.icon}`;
+
+                  new Html("div")
+                    .class("card", "col", "gap")
+                    .style({ flex: "1", minWidth: "250px", cursor: "pointer" })
+                    .on("click", () => pages.appPage(app, pkg))
+                    .appendMany(
+                      new Html("div").class("app-banner").style({
+                        "--url": `url(${appBannerUrl})`,
+                        height: "150px",
+                        borderRadius: "8px",
+                      }),
+                      new Html("div")
+                        .class("col")
+                        .appendMany(
+                          new Html("span").class("h3").text(app.name),
+                          new Html("span")
+                            .class("label")
+                            .text(app.shortDescription)
+                        )
+                    )
+                    .appendTo(featuredContainer);
+                }
+              }
+
+              const appsListContainer = new Html("div")
                 .class("apps", "ovh", "fg")
                 .appendTo(container);
 
+              if (category === "all") {
+                new Html("h2")
+                  .text("All Apps")
+                  .style({ padding: "0 12px" })
+                  .appendTo(appsListContainer);
+              }
+
+              const appsGrid = new Html("div")
+                .style({
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                  gap: "8px",
+                  padding: "12px",
+                })
+                .appendTo(appsListContainer);
+
               async function renderAppsList() {
-                for (let appObj of packageList) {
+                const appsToRender =
+                  category === "all"
+                    ? packageList
+                    : packageList.filter(
+                        (app) => String(app.category).toLowerCase() === category
+                      );
+
+                for (let appObj of appsToRender) {
                   let app = Object.assign(appObj, {
                     repoUrl: repoHost + appObj.id,
                   });
@@ -412,51 +457,51 @@ export default {
                   const { appCompatibleColor, appCompatibleIcon } =
                     getAppCompatibility(app.compatibleWith, sysInfo.version);
 
-                  if (
-                    category === "all" ||
-                    String(app.category).toLowerCase() === category
-                  ) {
-                    let appCompatibleRow = undefined;
-                    if (appCompatibleColor !== "success") {
-                      appCompatibleRow = new Html("div")
-                        .class("row")
-                        .append(
-                          new Html("div")
-                            .html(appCompatibleIcon)
-                            .class(appCompatibleColor, "row", "gap-mid", "fc")
-                        );
-                    }
-
-                    new Html("div")
-                      .class("app")
-                      .appendMany(
-                        new Html("div").class("col", "gap-mid").appendMany(
-                          new Html("div").class("app-meta").appendMany(
-                            new Html("img").class("app-icon").attr({
-                              src: `${host}pkgs/${pkg}/${app.assets.icon}`,
-                            }),
-                            new Html("div")
-                              .class("app-text")
-                              .appendMany(
-                                new Html("span")
-                                  .class("row", "gap", "ac", "row-wrap")
-                                  .appendMany(
-                                    new Html("span").class("h3").text(app.name),
-                                    new Html("span")
-                                      .class("label")
-                                      .text(`by ${app.author}`)
-                                  ),
-                                new Html("span").text(app.shortDescription)
-                              )
-                          ),
-                          appCompatibleRow
-                        )
-                      )
-                      .on("click", () => {
-                        pages.appPage(app, pkg);
-                      })
-                      .appendTo(appsList);
+                  let appCompatibleRow = undefined;
+                  if (appCompatibleColor !== "success") {
+                    appCompatibleRow = new Html("div")
+                      .class("row")
+                      .append(
+                        new Html("div")
+                          .html(appCompatibleIcon)
+                          .class(appCompatibleColor, "row", "gap-mid", "fc")
+                      );
                   }
+
+                  new Html("div")
+                    .class("app", "card")
+                    .style({
+                      display: "flex",
+                      flexDirection: "column",
+                      cursor: "pointer",
+                    })
+                    .appendMany(
+                      new Html("div").class("app-meta").appendMany(
+                        new Html("img").class("app-icon").attr({
+                          src: `${host}pkgs/${pkg}/${app.assets.icon}`,
+                        }),
+                        new Html("div").class("app-text").appendMany(
+                          new Html("span")
+                            .class("row", "gap", "ac", "row-wrap")
+                            .appendMany(
+                              new Html("span").class("h3").text(app.name)
+                            ),
+                          new Html("span")
+                            .class("label")
+                            .text(`by ${app.author}`),
+                          new Html("span").text(app.shortDescription).style({
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          })
+                        )
+                      ),
+                      appCompatibleRow
+                    )
+                    .on("click", () => {
+                      pages.appPage(app, pkg);
+                    })
+                    .appendTo(appsGrid);
                 }
               }
 

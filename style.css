@@ -2559,6 +2559,7 @@ hr {
   align-items: center;
   gap: 8px;
   flex: 1;
+  padding: 10px;
 }
 
 .app-store .app-text {
