@@ -32,12 +32,14 @@ export default {
         console.log(player);
         sessionStorage.setItem("player", JSON.stringify(player));
       });
+      document.dispatchEvent(new CustomEvent("Pluto.NowPlaying.Update"));
     },
     disposePlayer: function () {
       let player = {};
       player = {};
       console.log(player);
       sessionStorage.setItem("player", JSON.stringify(player));
+      document.dispatchEvent(new CustomEvent("Pluto.NowPlaying.Update"));
     },
   },
 };
