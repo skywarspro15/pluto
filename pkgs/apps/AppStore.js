@@ -26,8 +26,8 @@ export default {
         title: Root.Lib.getString("systemApp_AppStore"),
         pid: Root.PID,
         // width: "620px",
-        width: 700,
-        height: 400,
+        width: 960,
+        height: 540,
         // height: "350px",
         onclose: () => {
           Root.Lib.onEnd();
@@ -343,67 +343,146 @@ export default {
               this.clear();
 
               // Visual category name
-              let categoryName = "";
+              let categoryName =
+                category === "all"
+                  ? "Discover"
+                  : category[0].toUpperCase() + category.substring(1);
 
-              if (category === "all") {
-                categoryName = "Discover";
-              } else {
-                categoryName =
-                  category[0].toUpperCase() + category.substring(1);
-              }
-
-              new Html("h2")
-                // .style({ margin: "12px 8px 0 0" })
+              const headerContainer = new Html("div")
+                .class("row", "ac") // Use flexbox utilities
                 .style({
-                  margin: "12px 8px 0px 0px",
                   "background-image":
-                    "linear-gradient(to bottom, var(--root) 65%, rgba(var(--root-rgb), 0))",
-                  padding: "8px 12px 8px 12px",
+                    "linear-gradient(to bottom, var(--root) 85%, rgba(var(--root-rgb), 0))",
+                  padding: "8px 12px",
                   margin: "0",
                   position: "sticky",
-                  height: "48px",
-                  "background-color": "transparent",
-                  "z-index": "1",
                   top: "0",
-                  display: "flex",
-                  "align-items": "center",
+                  "z-index": "1",
+                  "justify-content": "space-between",
                 })
+                .appendTo(container);
+
+              new Html("h2")
+                .style({ margin: "0", padding: "0" })
                 .text(categoryName)
-                .appendTo(container);
+                .appendTo(headerContainer);
 
-              // const searchBar = new Html("div")
-              //   .class("search-bar")
-              //   .appendMany(
-              //     new Html("input")
-              //       .attr({
-              //         placeholder: "Search apps",
-              //       })
-              //       .class("transparent", "m-0", "pad")
-              //       .on("input", (e) => {
-              //         console.log(e.target.value);
-              //       })
-              //   )
-              //   .appendTo(container);
+              const searchInput = new Html("input")
+                .attr({
+                  type: "text",
+                  placeholder: "Search...",
+                })
+                .style({
+                  margin: "0", // Override default margin from style.css
+                })
+                .appendTo(headerContainer);
 
-              // const fuzzySearch = function (term, ratio) {
-              //   var string = this.toLowerCase();
-              //   var compare = term.toLowerCase();
-              //   var matches = 0;
-              //   if (string.indexOf(compare) > -1) return true; // covers basic partial matches
-              //   for (var i = 0; i < compare.length; i++) {
-              //     string.indexOf(compare[i]) > -1
-              //       ? (matches += 1)
-              //       : (matches -= 1);
-              //   }
-              //   return matches / this.length >= ratio || term == "";
-              // };
+              const contentWrapper = new Html("div").appendTo(container);
 
-              const appsList = new Html("div")
-                .class("apps", "ovh", "fg")
-                .appendTo(container);
+              searchInput.on("input", () => renderPageContent());
 
-              async function renderAppsList() {
-                for (let appObj of packageList) {
+              function renderPageContent() {
+                contentWrapper.clear();
+                const searchQuery = searchInput.getValue().toLowerCase().trim();
+
+                const appsToRenderBase =
+                  category === "all"
+                    ? packageList
+                    : packageList.filter(
+                        (app) => String(app.category).toLowerCase() === category
+                      );
+
+                const filteredApps = searchQuery
+                  ? appsToRenderBase.filter(
+                      (app) =>
+                        app.name.toLowerCase().includes(searchQuery) ||
+                        app.shortDescription
+                          .toLowerCase()
+                          .includes(searchQuery) ||
+                        app.description.toLowerCase().includes(searchQuery) ||
+                        app.author.toLowerCase().includes(searchQuery)
+                    )
+                  : appsToRenderBase;
+
+                if (category === "all" && !searchQuery) {
+                  const sortedApps = [...packageList].sort(
+                    (a, b) =>
+                      new Date(b.versions[0].date) -
+                      new Date(a.versions[0].date)
+                  );
+                  const recentlyUpdated = sortedApps.slice(0, 2);
+
+                  new Html("h2")
+                    .text("Recently Updated")
+                    .appendTo(contentWrapper);
+                  const featuredContainer = new Html("div")
+                    .class("row", "gap", "padded")
+                    .style({ flexWrap: "wrap" })
+                    .appendTo(contentWrapper);
+
+                  for (let appObj of recentlyUpdated) {
+                    let app = Object.assign(appObj, {
+                      repoUrl: repoHost + appObj.id,
+                    });
+                    const pkg = app.id;
+
+                    const appBannerUrl = app.assets.banner
+                      ? `${host}pkgs/${pkg}/${app.assets.banner}`
+                      : `${host}pkgs/${pkg}/${app.assets.icon}`;
+
+                    new Html("div")
+                      .class("card", "col", "gap")
+                      .style({
+                        flex: "1",
+                        minWidth: "250px",
+                        cursor: "pointer",
+                      })
+                      .on("click", () => pages.appPage(app, pkg))
+                      .appendMany(
+                        new Html("div").class("app-banner").style({
+                          "--url": `url(${appBannerUrl})`,
+                          height: "150px",
+                          borderRadius: "8px",
+                        }),
+                        new Html("div")
+                          .class("col")
+                          .appendMany(
+                            new Html("span").class("h3").text(app.name),
+                            new Html("span")
+                              .class("label")
+                              .text(app.shortDescription)
+                          )
+                      )
+                      .appendTo(featuredContainer);
+                  }
+                }
+
+                const appsListContainer = new Html("div")
+                  .class("apps", "ovh", "fg")
+                  .appendTo(contentWrapper);
+
+                if (category === "all" && !searchQuery) {
+                  new Html("h2").text("All Apps").appendTo(appsListContainer);
+                }
+
+                const appsGrid = new Html("div")
+                  .style({
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(220px, 1fr))",
+                    gap: "8px",
+                    padding: "12px",
+                  })
+                  .appendTo(appsListContainer);
+
+                if (filteredApps.length === 0) {
+                  new Html("div")
+                    .class("padded")
+                    .text("No apps found.")
+                    .appendTo(appsGrid);
+                }
+
+                for (let appObj of filteredApps) {
                   let app = Object.assign(appObj, {
                     repoUrl: repoHost + appObj.id,
                   });
@@ -412,55 +491,55 @@ export default {
                   const { appCompatibleColor, appCompatibleIcon } =
                     getAppCompatibility(app.compatibleWith, sysInfo.version);
 
-                  if (
-                    category === "all" ||
-                    String(app.category).toLowerCase() === category
-                  ) {
-                    let appCompatibleRow = undefined;
-                    if (appCompatibleColor !== "success") {
-                      appCompatibleRow = new Html("div")
-                        .class("row")
-                        .append(
-                          new Html("div")
-                            .html(appCompatibleIcon)
-                            .class(appCompatibleColor, "row", "gap-mid", "fc")
-                        );
-                    }
-
-                    new Html("div")
-                      .class("app")
-                      .appendMany(
-                        new Html("div").class("col", "gap-mid").appendMany(
-                          new Html("div").class("app-meta").appendMany(
-                            new Html("img").class("app-icon").attr({
-                              src: `${host}pkgs/${pkg}/${app.assets.icon}`,
-                            }),
-                            new Html("div")
-                              .class("app-text")
-                              .appendMany(
-                                new Html("span")
-                                  .class("row", "gap", "ac", "row-wrap")
-                                  .appendMany(
-                                    new Html("span").class("h3").text(app.name),
-                                    new Html("span")
-                                      .class("label")
-                                      .text(`by ${app.author}`)
-                                  ),
-                                new Html("span").text(app.shortDescription)
-                              )
-                          ),
-                          appCompatibleRow
-                        )
-                      )
-                      .on("click", () => {
-                        pages.appPage(app, pkg);
-                      })
-                      .appendTo(appsList);
+                  let appCompatibleRow = undefined;
+                  if (appCompatibleColor !== "success") {
+                    appCompatibleRow = new Html("div")
+                      .class("row")
+                      .append(
+                        new Html("div")
+                          .html(appCompatibleIcon)
+                          .class(appCompatibleColor, "row", "gap-mid", "fc")
+                      );
                   }
+
+                  new Html("div")
+                    .class("app", "card")
+                    .style({
+                      display: "flex",
+                      flexDirection: "column",
+                      cursor: "pointer",
+                    })
+                    .appendMany(
+                      new Html("div").class("app-meta").appendMany(
+                        new Html("img").class("app-icon").attr({
+                          src: `${host}pkgs/${pkg}/${app.assets.icon}`,
+                        }),
+                        new Html("div").class("app-text").appendMany(
+                          new Html("span")
+                            .class("row", "gap", "ac", "row-wrap")
+                            .appendMany(
+                              new Html("span").class("h3").text(app.name)
+                            ),
+                          new Html("span")
+                            .class("label")
+                            .text(`by ${app.author}`),
+                          new Html("span").text(app.shortDescription).style({
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          })
+                        )
+                      ),
+                      appCompatibleRow
+                    )
+                    .on("click", () => {
+                      pages.appPage(app, pkg);
+                    })
+                    .appendTo(appsGrid);
                 }
               }
 
-              renderAppsList();
+              renderPageContent();
             },
             async appPage(app, pkg) {
               this.clear();
@@ -607,7 +686,9 @@ export default {
                 )
                 .appendTo(container);
 
-              const rtf = new Intl.RelativeTimeFormat("en", { style: "short" });
+              const rtf = new Intl.RelativeTimeFormat("en", {
+                style: "short",
+              });
 
               new Html("div")
                 .class("app-whats-new")

@@ -1071,7 +1071,7 @@ export default {
       }
     }
 
-    setInterval(updatePlayer, 1000);
+    document.addEventListener("Pluto.NowPlaying.Update", updatePlayer);
 
     let trayWrapper = new Root.Lib.html("div")
       .style({ position: "relative" })

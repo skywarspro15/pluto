@@ -14,11 +14,11 @@ export default {
     const Win = (await Root.Lib.loadLibrary("WindowSystem")).win;
 
     MyWindow = new Win({
-      title: Root.Lib.getString('systemApp_Weather'),
+      title: Root.Lib.getString("systemApp_Weather"),
       content: '<iframe src="https://cherries.to/cloudburst/">',
       pid: Root.PID,
-      width: 400,
-      height: 360,
+      width: 960,
+      height: 540,
       onclose: () => {
         Root.Lib.onEnd();
       },
