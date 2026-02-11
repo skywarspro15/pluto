@@ -37,7 +37,7 @@ export default {
       noPictures: "Keine Bilder gefunden",
       noPicturesTitle: "Sie haben keine Bilder",
       noPicturesDescription:
-        'Importieren Sie Fotos in den Ordner "Bilder" im Dateimanager, mit es sie angezeigt werden.',
+        'Importieren Sie Fotos in den Ordner "Pictures" im Dateimanager, mit es sie angezeigt werden.',
       pageOverview: "Galerie",
     },
     es_ES: {
@@ -59,12 +59,12 @@ export default {
       pageOverview: "Galeria",
     },
     fil_PH: {
-      imageLoadError: "Hindi ito lilitaw na isang imahe",
+      imageLoadError: "Mukhang ito'y hindi isang larawan",
       backToOverview: "Bumalik sa gallery",
-      noPictures: "Walang nahanap na mga imahe",
+      noPictures: "Walang nahanap na mga larawan",
       noPicturesTitle: "Wala kang mga larawan",
       noPicturesDescription:
-        'Mag-import ng mga larawan sa folder na "Mga Larawan" sa File Manager upang maipakita ang mga ito.',
+        'Mag-import ng mga larawan sa folder na "Pictures" sa File Manager upang maipakita ang mga ito.',
       pageOverview: "Gallery",
     },
   },
@@ -80,8 +80,8 @@ export default {
     PhotosWindow = new Win({
       title: Root.Lib.getString("systemApp_ImageViewer"),
       pid: Root.PID,
-      width: 445,
-      height: 295,
+      width: 545,
+      height: 395,
       onclose: () => {
         Root.Lib.onEnd();
       },
@@ -111,7 +111,7 @@ export default {
       if (result === false) return;
       PhotosWindow.setTitle(
         `${Root.Lib.getString("systemApp_ImageViewer")} - ` +
-          file.split("/").pop()
+          file.split("/").pop(),
       );
       PhotosWindow.focus();
     }
@@ -122,7 +122,7 @@ export default {
         Root.Modal.alert("Error", Root.Lib.getString("imageLoadError")).then(
           (_) => {
             PhotosWindow.focus();
-          }
+          },
         );
         return false;
       }
@@ -179,7 +179,7 @@ export default {
             Root.Modal.alert(
               Root.Lib.getString("noPicturesTitle"),
               Root.Lib.getString("noPicturesDescription"),
-              wrapper
+              wrapper,
             );
           },
           html: Root.Lib.icons.help,
@@ -197,8 +197,8 @@ export default {
         makeSidebar();
         PhotosWindow.setTitle(
           `${Root.Lib.getString(
-            "systemApp_ImageViewer"
-          )} - ${Root.Lib.getString("pageOverview")}`
+            "systemApp_ImageViewer",
+          )} - ${Root.Lib.getString("pageOverview")}`,
         );
 
         let imageGrid = new Root.Lib.html("div")
@@ -216,12 +216,13 @@ export default {
             !content.startsWith("data:image/") &&
             !content.startsWith("blob:")
           ) {
-            Root.Modal.alert(
-              Root.Lib.getString("error"),
-              Root.Lib.getString("imageLoadError")
-            ).then((_) => {
-              PhotosWindow.focus();
-            });
+            // Silently ignore the file instead
+            // Root.Modal.alert(
+            //   Root.Lib.getString("error"),
+            //   Root.Lib.getString("imageLoadError"),
+            // ).then((_) => {
+            //   PhotosWindow.focus();
+            // });
             return false;
           }
 
@@ -241,7 +242,7 @@ export default {
           Root.Modal.alert(
             Root.Lib.getString("noPicturesTitle"),
             Root.Lib.getString("noPicturesDescription"),
-            wrapper
+            wrapper,
           );
         }
 
