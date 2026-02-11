@@ -1,4 +1,40 @@
 // Pluto
+
+dispatchConsoleEvent = (argumentsArray, type) => {
+  document.dispatchEvent(
+    new CustomEvent("console-update", {
+      detail: argumentsArray,
+      type,
+    }),
+  );
+};
+
+console.stdlog = console.log.bind(console);
+console.stderr = console.error.bind(console);
+console.stdinf = console.info.bind(console);
+console.stdwar = console.warn.bind(console);
+console.logs = [];
+console.log = function () {
+  dispatchConsoleEvent(Array.from(arguments), "verbose");
+  console.logs.push({ data: Array.from(arguments), type: "verbose" });
+  console.stdlog.apply(console, arguments);
+};
+console.error = function () {
+  dispatchConsoleEvent(Array.from(arguments), "error");
+  console.logs.push({ data: Array.from(arguments), type: "error" });
+  console.stderr.apply(console, arguments);
+};
+console.info = function () {
+  dispatchConsoleEvent(Array.from(arguments), "info");
+  console.logs.push({ data: Array.from(arguments), type: "info" });
+  console.stdinf.apply(console, arguments);
+};
+console.warn = function () {
+  dispatchConsoleEvent(Array.from(arguments), "warning");
+  console.logs.push({ data: Array.from(arguments), type: "warning" });
+  console.stdwar.apply(console, arguments);
+};
+
 (async () => {
   const semver = (await import("./assets/semver.min.js")).default;
   try {
@@ -82,7 +118,7 @@
         qsa(query) {
           if (this.elm.querySelector(query)) {
             return Array.from(this.elm.querySelectorAll(query)).map((e) =>
-              Html.from(e)
+              Html.from(e),
             );
           } else {
             return null;
@@ -356,7 +392,7 @@
         static qsa(query) {
           if (document.querySelector(query)) {
             return Array.from(document.querySelectorAll(query)).map((e) =>
-              Html.from(e)
+              Html.from(e),
             );
           } else {
             return null;
@@ -377,14 +413,14 @@
             function (c) {
               var r = Math.random() * 16;
               if (d > 0) {
-                r = (d + r) % 16 | 0;
+                r = ((d + r) % 16) | 0;
                 d = Math.floor(d / 16);
               } else {
-                r = (d2 + r) % 16 | 0;
+                r = ((d2 + r) % 16) | 0;
                 d2 = Math.floor(d2 / 16);
               }
               return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
-            }
+            },
           );
         }
       },
@@ -516,7 +552,7 @@
                 suspectedApp: appName,
                 targetApp: app.split(":").pop(),
               }),
-              parent
+              parent,
             )) === true
           ) {
             return await Core.startPkg(app);
@@ -657,7 +693,7 @@
         console.group("Process cleanup (" + pid, proc.name + ")");
         console.debug(
           `%cProcess ${proc.name} (${proc.pid}) was ended.`,
-          "color:green;font-weight:bold"
+          "color:green;font-weight:bold",
         );
         let x = procsListeningToEvents.findIndex((p) => p === pid);
         if (x !== undefined || x !== null) {
@@ -745,7 +781,7 @@
                 data: function (
                   str,
                   replacements = null,
-                  source = p.proc.strings
+                  source = p.proc.strings,
                 ) {
                   return getString(str, replacements, source);
                 },
@@ -787,7 +823,7 @@
           if (pkg.name && pkg.type === "process" && pkgSatisfies === true) {
             console.group("Running " + url);
             console.log(
-              `Core version: ${Core.version}\nPackage version: ${pkg.ver}`
+              `Core version: ${Core.version}\nPackage version: ${pkg.ver}`,
             );
             // Matching Core version and type is set
             console.log("Good package data");
@@ -855,11 +891,10 @@
                         '<span class="danger">No author note</span>';
                     // dangerous
                     if (item.privilege === "full") {
-                      privileges[
-                        item.privilege
-                      ].description = `<span class=\"danger\">${getString(
-                        privileges[item.privilege].description
-                      )}</span>`;
+                      privileges[item.privilege].description =
+                        `<span class=\"danger\">${getString(
+                          privileges[item.privilege].description,
+                        )}</span>`;
                     }
                     privileges[item.privilege].authorNote = item.description;
                   }
@@ -884,21 +919,21 @@
                         .map(
                           (m) =>
                             `<li>${getString(
-                              privileges[m].description
+                              privileges[m].description,
                             )}<br><span class="label">${
                               privileges[m].authorNote !== undefined
                                 ? `${getString(
                                     "core_appAccessControl_authorNote",
                                     {
                                       note: escapeHtml(
-                                        privileges[m].authorNote
+                                        privileges[m].authorNote,
                                       ),
-                                    }
+                                    },
                                   )}</li>`
                                 : `<span style="color:var(--negative-light)">${getString(
-                                    "core_appAccessControl_noAuthorNote"
+                                    "core_appAccessControl_noAuthorNote",
                                   )}</span>`
-                            }</span>`
+                            }</span>`,
                         )
                         .join("")}</ul>`,
                       "body",
@@ -915,7 +950,7 @@
                       {
                         text: getString("cancel"),
                         callback: (_) => resolve(false),
-                      }
+                      },
                     );
                   });
                 else modalResult = "allow";
@@ -981,7 +1016,7 @@
                     description: pkg?.description,
                     strings: pkg?.strings,
                   },
-                  result
+                  result,
                 );
                 if (
                   typeof pkg?.optInToEvents !== "undefined" &&
@@ -1016,7 +1051,7 @@
               "Bad package metadata" +
                 (pkg.ver !== undefined && typeof pkg.ver === "number"
                   ? ` - maybe version "${pkg.ver}" doesn\'t match your current version of "${Core.version}"?`
-                  : "")
+                  : ""),
             );
           }
         } catch (e) {
