@@ -278,17 +278,36 @@ export default {
       }
 
       maximize(side) {
+        // If called without arguments (double click), determine direction based on current state
+        if (side === undefined) {
+          if (this.state === "max" || this.state === "snap") {
+            side = false; // Trigger restore
+          } else {
+            side = "top"; // Trigger maximize
+          }
+        }
+
         if (side) {
+          // Save dimensions AND position before we change them (because why wasn't this implemented before!?) (grr)
+          // We only save if we aren't already in a temporary state (like dragging)
           this.window.dataset.lastWidth = this.window.style.width;
           this.window.dataset.lastHeight = this.window.style.height;
+          this.window.dataset.lastLeft = this.window.style.left;
+          this.window.dataset.lastTop = this.window.style.top;
+
           switch (side) {
-            default:
-            // unused
             case "top":
-              this.window.classList.toggle("max");
-              // this.window.style.top = 0;
-              // this.window.style.left = 0;
+              // Standard Maximize: Rely on CSS Class for animation/sizing
+              this.window.classList.add("max");
+
+              // Clear inline styles so the CSS class takes priority (enabling transition)
+              this.window.style.removeProperty("width");
+              this.window.style.removeProperty("height");
+              this.window.style.removeProperty("top");
+              this.window.style.removeProperty("left");
               break;
+
+            // Snapping cases MUST remain explicit JS because they calculate specific pixel values
             case "left":
               this.window.style.width =
                 Math.floor(this.window.parentNode.offsetWidth / 2) + "px";
@@ -296,31 +315,24 @@ export default {
                 this.window.parentNode.offsetHeight +
                 (checkDesktopPresence() ? -54 : 0) +
                 "px";
-              this.window.style.top = 0;
-              this.window.style.left = 0;
-              this.window.classList.toggle("snapped");
+              this.window.style.top = "0px";
+              this.window.style.left = "0px";
+              this.window.classList.add("snapped");
               break;
-            // Snap to right
             case "right":
-              // Width is half width of parent
               this.window.style.width =
                 Math.floor(this.window.parentNode.offsetWidth / 2) + "px";
-              // Height is height of parent minus dock height
               this.window.style.height =
                 this.window.parentNode.offsetHeight +
                 (checkDesktopPresence() ? -54 : 0) +
                 "px";
-              // Top is top of screen (0)
-              this.window.style.top = 0;
-              // Left is the parent width minus the new window width
+              this.window.style.top = "0px";
               this.window.style.left =
                 this.window.parentNode.offsetWidth -
                 parseInt(this.window.style.width) +
                 "px";
-              // Make it known as snapped
-              this.window.classList.toggle("snapped");
+              this.window.classList.add("snapped");
               break;
-            // Corner snapping (new in v1.5)
             case "top-left":
               this.window.style.width =
                 Math.floor(this.window.parentNode.offsetWidth / 2) + "px";
@@ -328,9 +340,9 @@ export default {
                 Math.floor(this.window.parentNode.offsetHeight / 2) +
                 (checkDesktopPresence() ? -54 * 0.5 : 0) +
                 "px";
-              this.window.style.top = 0;
-              this.window.style.left = 0;
-              this.window.classList.toggle("snapped");
+              this.window.style.top = "0px";
+              this.window.style.left = "0px";
+              this.window.classList.add("snapped");
               break;
             case "top-right":
               this.window.style.width =
@@ -339,12 +351,12 @@ export default {
                 Math.floor(this.window.parentNode.offsetHeight / 2) +
                 (checkDesktopPresence() ? -54 * 0.5 : 0) +
                 "px";
-              this.window.style.top = 0;
+              this.window.style.top = "0px";
               this.window.style.left =
                 this.window.parentNode.offsetWidth -
                 parseInt(this.window.style.width) +
                 "px";
-              this.window.classList.toggle("snapped");
+              this.window.classList.add("snapped");
               break;
             case "bottom-left":
               this.window.style.width =
@@ -358,9 +370,8 @@ export default {
                 parseInt(this.window.style.height) +
                 (checkDesktopPresence() ? -54 : 0) +
                 "px";
-              console.log();
-              this.window.style.left = 0;
-              this.window.classList.toggle("snapped");
+              this.window.style.left = "0px";
+              this.window.classList.add("snapped");
               break;
             case "bottom-right":
               this.window.style.width =
@@ -374,28 +385,29 @@ export default {
                 parseInt(this.window.style.height) +
                 (checkDesktopPresence() ? -54 : 0) +
                 "px";
-              console.log();
               this.window.style.left =
                 this.window.parentNode.offsetWidth -
                 parseInt(this.window.style.width) +
                 "px";
-              this.window.classList.toggle("snapped");
+              this.window.classList.add("snapped");
               break;
           }
         } else if (side === false) {
-          // Reset
-          if (this.state === "snap") {
+          // Restore Dimensions
+          if (this.window.dataset.lastWidth)
             this.window.style.width = this.window.dataset.lastWidth;
+          if (this.window.dataset.lastHeight)
             this.window.style.height = this.window.dataset.lastHeight;
-            this.window.classList.remove("snapped");
-          } else if (this.state === "max") {
-            this.window.classList.remove("max");
-            this.window.style.top = 0;
-          }
+
+          // Restore Position
+          if (this.window.dataset.lastLeft)
+            this.window.style.left = this.window.dataset.lastLeft;
+          if (this.window.dataset.lastTop)
+            this.window.style.top = this.window.dataset.lastTop;
+
+          this.window.classList.remove("snapped");
+          this.window.classList.remove("max");
           this.window.classList.remove("prep-pull");
-        } else if (side === undefined) {
-          // Legacy function call
-          this.window.classList.toggle("max");
         }
 
         if (
@@ -423,7 +435,7 @@ export default {
           this.window.dataset.lastHeight = this.window.style.height;
           this.window.style.setProperty(
             "--last-height",
-            `${this.window.style.height}`
+            `${this.window.style.height}`,
           );
           this.window.style.width = "auto";
           this.window.style.height = "auto";
@@ -665,7 +677,7 @@ function WinDrag(e) {
               "px",
             top: `${snapBoxMargin}px`,
             left: `${snapBoxMargin}px`,
-          }
+          },
         );
         winRef.dataset.snapPos = "top-left";
       } else if (
@@ -699,7 +711,7 @@ function WinDrag(e) {
               Math.floor(winRef.parentNode.offsetWidth / 2) +
               snapBoxMargin +
               "px",
-          }
+          },
         );
         winRef.dataset.snapPos = "top-right";
       } else if (
@@ -732,7 +744,7 @@ function WinDrag(e) {
               snapBoxMargin +
               "px",
             left: snapBoxMargin + "px",
-          }
+          },
         );
         winRef.dataset.snapPos = "bottom-left";
       } else if (
@@ -770,7 +782,7 @@ function WinDrag(e) {
               Math.floor(winRef.parentNode.offsetWidth / 2) +
               snapBoxMargin +
               "px",
-          }
+          },
         );
         winRef.dataset.snapPos = "bottom-right";
       } else if (newPositionY < snapMargin) {
@@ -794,7 +806,7 @@ function WinDrag(e) {
               winRef.parentNode.offsetHeight - (snapBoxMargin * 2 + 48) + "px",
             top: `${snapBoxMargin}px`,
             left: `${snapBoxMargin}px`,
-          }
+          },
         );
         winRef.dataset.snapPos = "top";
       } else if (newPositionX < snapMargin) {
@@ -818,7 +830,7 @@ function WinDrag(e) {
               winRef.parentNode.offsetHeight - (snapBoxMargin * 2 + 48) + "px",
             top: `${snapBoxMargin}px`,
             left: `${snapBoxMargin}px`,
-          }
+          },
         );
         winRef.dataset.snapPos = "left";
       } else if (
@@ -852,7 +864,7 @@ function WinDrag(e) {
               Math.floor(winRef.parentNode.offsetWidth / 2) +
               snapBoxMargin +
               "px",
-          }
+          },
         );
         winRef.dataset.snapPos = "right";
       } else {
@@ -890,11 +902,24 @@ function WinDrag(e) {
     ) {
       // Prep pull means to un-maximize
       let wo = getWindowObjectById(winRef.dataset.windowId);
+
+      const rect = winRef.getBoundingClientRect();
+      const initialMouseX = e.clientX || e.touches[0].clientX;
+      const ratio = (initialMouseX - rect.left) / rect.width;
+
       winRef.classList.add("dragging");
       wo.maximize(false);
-      // Position window at middle of cursor:
-      // X = CurX - (WindowWidth / 2)
-      winRef.style.left = Math.floor(e.clientX - winRef.offsetWidth / 2) + "px";
+
+      const newWidth = winRef.offsetWidth;
+      const newLeft = initialMouseX - newWidth * ratio;
+
+      winRef.style.left = newLeft + "px";
+      // Position top slightly offset so it doesn't snap back immediately
+      winRef.style.top = (e.clientY || e.touches[0].clientY) - 15 + "px";
+
+      // Update global mouse trackers so the next movement frame creates a smooth drag
+      mouseX = initialMouseX;
+      mouseY = e.clientY || e.touches[0].clientY;
     } else if (isResizing) {
       // otherwise begin resizing
       resize(e);
