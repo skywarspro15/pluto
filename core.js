@@ -39,7 +39,7 @@ console.warn = function () {
   const semver = (await import("./assets/semver.min.js")).default;
   try {
     const coreDetails = {
-      version: "v1.6.2",
+      version: "v1.7.0",
       codename: "Elysium",
     };
     // for compatibility
