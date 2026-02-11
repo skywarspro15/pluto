@@ -756,6 +756,7 @@ console.warn = function () {
       "es_ES",
       "pt_BR",
       "fil_PH",
+      "ja_JP",
     ];
 
     let language = "en_US";

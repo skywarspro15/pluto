@@ -67,6 +67,15 @@ export default {
         'Mag-import ng mga larawan sa folder na "Pictures" sa File Manager upang maipakita ang mga ito.',
       pageOverview: "Gallery",
     },
+    ja_JP: {
+      imageLoadError: "画像ファイルではないようです",
+      backToOverview: "一覧に戻る",
+      noPictures: "画像が見つかりません",
+      noPicturesTitle: "写真がありません",
+      noPicturesDescription:
+        "ファイルマネージャーの「Pictures」フォルダーに写真を追加すると、ここに表示されます。",
+      pageOverview: "一覧",
+    },
   },
   exec: async function (Root) {
     let wrapper;
