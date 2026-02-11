@@ -49,6 +49,8 @@ export default {
       loginWithZeon: "Login with Zeon Account",
       logOut: "Log out",
       zeonAccount: "Zeon Account",
+      changeWallpaper: "Change wallpaper",
+      imageLoadError: "This does not look like an image",
       wantsLoginScreen: "Show the login screen when not logged in",
       useThemeWallpaper: "Use the theme's wallpaper",
       toolbarPosition: "Toolbar position",
@@ -88,6 +90,7 @@ export default {
       storageUsed: "Speicher verwendet",
       coreVersion: "Kernversion",
       supportedVersions: "Unterstützte Versionen",
+      imageLoadError: "Dies scheint kein Bild zu sein",
     },
     es_ES: {
       thisSystem: "Este sistema",
@@ -101,6 +104,7 @@ export default {
       storageUsed: "Memoria usada",
       coreVersion: "Versión central",
       supportedVersions: "Versiones compatibles",
+      imageLoadError: "Esto no parece ser una imagen",
     },
     pt_BR: {
       thisSystem: "Este sistema",
@@ -114,6 +118,7 @@ export default {
       storageUsed: "Memoria usada",
       coreVersion: "Versão da core",
       supportedVersions: "Versãos suportado",
+      imageLoadError: "Isso não parece ser uma imagem",
     },
     fil_PH: {
       thisSystem: "Itong system",
@@ -131,6 +136,8 @@ export default {
       loginWithZeon: "Mag-login sa Zeon Account",
       logOut: "Mag-log out",
       zeonAccount: "Zeon Account",
+      changeWallpaper: "Baguhin ang wallpaper",
+      imageLoadError: "Mukhang ito'y hindi isang larawan",
       useThemeWallpaper: "Gamitin ang wallpaper galing sa tema",
       toolbarPosition: "Posisyon ng toolbar",
       toolbarPositionVertical: "Patayo",
@@ -158,7 +165,7 @@ export default {
     let wrapper; // Lib.html | undefined
     let settingsWin;
     Root.Lib.setOnEnd(
-      (_) => settingsWin && settingsWin.close && settingsWin.close()
+      (_) => settingsWin && settingsWin.close && settingsWin.close(),
     );
 
     console.log("Hello from example package", Root.Lib);
@@ -170,7 +177,7 @@ export default {
         Root.Core.processList
           .filter((x) => x !== null)
           .find(
-            (x) => x.name && x.name === "apps:Settings" && x.proc !== null
+            (x) => x.name && x.name === "apps:Settings" && x.proc !== null,
           ) !== undefined)
     ) {
       Root.Lib.onEnd();
@@ -187,6 +194,8 @@ export default {
     const codeScanner = await Root.Lib.loadLibrary("CodeScanner");
     const dropDown = await Root.Lib.loadComponent("DropDown");
     const Notify = await Root.Lib.loadLibrary("Notify");
+    const FileDialog = await Root.Lib.loadLibrary("FileDialog");
+    const FileMappings = await Root.Lib.loadLibrary("FileMappings");
     await vfs.importFS();
 
     const defaultDesktopConfig = {
@@ -201,20 +210,30 @@ export default {
 
     let desktopConfig = Object.assign(
       defaultDesktopConfig,
-      JSON.parse(await vfs.readFile("Root/Pluto/config/appearanceConfig.json"))
+      JSON.parse(await vfs.readFile("Root/Pluto/config/appearanceConfig.json")),
     );
     console.log(desktopConfig);
+
+    async function openFile(path) {
+      let file;
+      if (path) file = path;
+      else file = await FileDialog.pickFile("Root");
+      if (file === false) return;
+      let result = await vfs.readFile(file);
+      if (result === false) return;
+      return result;
+    }
 
     async function save() {
       await vfs.writeFile(
         "Root/Pluto/config/appearanceConfig.json",
-        JSON.stringify(desktopConfig)
+        JSON.stringify(desktopConfig),
       );
       desktopConfig = Object.assign(
         defaultDesktopConfig,
         JSON.parse(
-          await vfs.readFile("Root/Pluto/config/appearanceConfig.json")
-        )
+          await vfs.readFile("Root/Pluto/config/appearanceConfig.json"),
+        ),
       );
     }
 
@@ -223,8 +242,8 @@ export default {
       onclose: () => {
         Root.Lib.onEnd();
       },
-      width: 520,
-      height: 360,
+      width: 620,
+      height: 460,
       pid: Root.PID,
     });
 
@@ -331,8 +350,8 @@ export default {
           desktopConfig = Object.assign(
             defaultDesktopConfig,
             JSON.parse(
-              await vfs.readFile("Root/Pluto/config/appearanceConfig.json")
-            )
+              await vfs.readFile("Root/Pluto/config/appearanceConfig.json"),
+            ),
           );
         },
         async account() {
@@ -359,13 +378,15 @@ export default {
             .text(
               userData.onlineAccount === true
                 ? Root.Lib.getString("zeonAccount")
-                : Root.Lib.getString("localAccount")
+                : Root.Lib.getString("localAccount"),
             );
 
           const userBox = new Html("div")
             .appendMany(
               userBoxAvatar,
-              new Html("div").class("text").appendMany(userBoxName, userBoxType)
+              new Html("div")
+                .class("text")
+                .appendMany(userBoxName, userBoxType),
             )
             .class("card-box", "max")
             .appendTo(container);
@@ -380,7 +401,7 @@ export default {
                   "Enter your user name",
                   "Username",
                   settingsWin.elm,
-                  false
+                  false,
                 );
 
                 if (x === false) return;
@@ -390,13 +411,13 @@ export default {
                   "Enter your password",
                   "Password",
                   settingsWin.elm,
-                  true
+                  true,
                 );
 
                 if (y === false) return;
 
                 let service = Root.Core.services.find(
-                  (x) => x.name === "Account"
+                  (x) => x.name === "Account",
                 );
 
                 if (service) {
@@ -407,7 +428,7 @@ export default {
                       "Oops",
                       "Something went wrong while logging in:\n\n" +
                         JSON.stringify(result, null, 2),
-                      settingsWin
+                      settingsWin,
                     );
                   }
                 }
@@ -421,7 +442,7 @@ export default {
                 const a = await Root.Modal.prompt("Are you sure?", "Log out?");
                 if (a === true) {
                   let service = Root.Core.services.find(
-                    (x) => x.name === "Account"
+                    (x) => x.name === "Account",
                   );
                   if (service && service.ref) {
                     service.ref.logout();
@@ -467,8 +488,8 @@ export default {
                     desktopConfig.wantsLoginScreen === undefined
                       ? true
                       : desktopConfig.wantsLoginScreen === true
-                      ? true
-                      : null,
+                        ? true
+                        : null,
                 })
                 .on("input", async (e) => {
                   desktopConfig.wantsLoginScreen = e.target.checked;
@@ -478,7 +499,7 @@ export default {
                 .attr({
                   for: Root.PID + "wls",
                 })
-                .text(Root.Lib.getString("wantsLoginScreen"))
+                .text(Root.Lib.getString("wantsLoginScreen")),
             )
             .appendTo(container);
         },
@@ -492,7 +513,7 @@ export default {
             .class("icon")
             .style({ "--url": "url(./assets/pluto-logo.svg)" });
           const cardBoxName = new Html("div").text(
-            `${Root.Lib.getString("plutoName")} ${sysInfo.versionString}`
+            `${Root.Lib.getString("plutoName")} ${sysInfo.versionString}`,
           );
           const cardBoxType = new Html("div")
             .class("label")
@@ -501,7 +522,9 @@ export default {
           const cardBox = new Html("div")
             .appendMany(
               cardBoxIcon,
-              new Html("div").class("text").appendMany(cardBoxName, cardBoxType)
+              new Html("div")
+                .class("text")
+                .appendMany(cardBoxName, cardBoxType),
             )
             .class("card-box", "max")
             .appendTo(container);
@@ -643,7 +666,7 @@ export default {
                   new Html().text(Root.Lib.getString("operatingSystem")),
                   new Html()
                     .class("label")
-                    .text((os.name + " " + os.version).trim())
+                    .text((os.name + " " + os.version).trim()),
                 ),
               // Browser
               new Html()
@@ -652,29 +675,29 @@ export default {
                   new Html().text(Root.Lib.getString("webBrowser")),
                   new Html()
                     .class("label")
-                    .text((browser.name + " " + browser.version).trim())
+                    .text((browser.name + " " + browser.version).trim()),
                 ),
               // Device type
               new Html()
                 .class("item")
                 .appendMany(
                   new Html().text(Root.Lib.getString("deviceType")),
-                  new Html().class("label").text(deviceType)
+                  new Html().class("label").text(deviceType),
                 ),
               // Protocol
               new Html()
                 .class("item")
                 .appendMany(
                   new Html().text(Root.Lib.getString("webProtocol")),
-                  new Html().class("label").text(webProtocol)
+                  new Html().class("label").text(webProtocol),
                 ),
               // Host
               new Html()
                 .class("item")
                 .appendMany(
                   new Html().text(Root.Lib.getString("webHost")),
-                  new Html().class("label").text(webHost)
-                )
+                  new Html().class("label").text(webHost),
+                ),
             )
             .appendTo(container);
 
@@ -728,7 +751,7 @@ export default {
                   text[4] +
                   text[6] +
                   text[6],
-                nb
+                nb,
               );
             }
           }
@@ -741,7 +764,7 @@ export default {
                 .class("item")
                 .appendMany(
                   new Html().text(Root.Lib.getString("storageUsed")),
-                  new Html().class("label").text(filesystemSize)
+                  new Html().class("label").text(filesystemSize),
                 ),
               // Core Version
               new Html()
@@ -751,7 +774,7 @@ export default {
                   new Html()
                     .class("label")
                     .text(sysInfo.versionString)
-                    .on("click", increaseCoreCount)
+                    .on("click", increaseCoreCount),
                 ),
               // Supported Versions
               new Html()
@@ -760,8 +783,8 @@ export default {
                   new Html().text(Root.Lib.getString("supportedVersions")),
                   new Html()
                     .class("label")
-                    .text(sysInfo.minSupported.replace("<=", "≤"))
-                )
+                    .text(sysInfo.minSupported.replace("<=", "≤")),
+                ),
             )
             .appendTo(container);
 
@@ -798,12 +821,47 @@ export default {
           await this.clear("appearance");
           makeHeading("h1", Root.Lib.getString("appearance"));
 
+          console.log(desktopConfig);
+
+          const wallpaperPreview = new Html("img")
+            .styleJs({
+              width: "350px",
+              aspectRatio: "16 / 9",
+              borderRadius: "8px",
+            })
+            .class("row", "ac", "js", "gap")
+            .appendTo(container);
+
+          const currentTheme = themeLib.validateTheme(
+            await vfs.readFile(
+              "Root/Pluto/config/themes/" + desktopConfig.theme,
+            ),
+          );
+          if (currentTheme.data) {
+            wallpaperPreview.attr({
+              src: desktopConfig.useThemeWallpaper
+                ? currentTheme.data.wallpaper
+                  ? currentTheme.data.wallpaper
+                  : ""
+                : desktopConfig.wallpaper,
+            });
+          } else {
+            wallpaperPreview.attr({
+              src: desktopConfig.wallpaper,
+            });
+          }
+
+          let changeWallpaperButton = new Html("button")
+            .text(Root.Lib.getString("changeWallpaper"))
+            .class("primary", "mc", "small")
+            .appendTo(container);
+
           const themeSelectSpan = new Html("span")
             .class("row", "ac", "js", "gap")
             .appendTo(container);
 
           themeSelectSpan.append(
-            new Html("span").text(Root.Lib.getString("theme"))
+            new Html("span").text(Root.Lib.getString("theme")),
           );
 
           // Get the themes stored on the system, else fall back to default themes
@@ -830,7 +888,7 @@ export default {
             themes = defaultThemes;
           } else {
             const themeFileListReal = await vfs.list(
-              "Root/Pluto/config/themes"
+              "Root/Pluto/config/themes",
             );
             const themeFileList = themeFileListReal
               .filter((r) => r.type === "file" && r.item.endsWith(".theme"))
@@ -839,7 +897,7 @@ export default {
             await Promise.all(
               themeFileList.map(async (itm) => {
                 const theme = await vfs.readFile(
-                  `Root/Pluto/config/themes/${itm}`
+                  `Root/Pluto/config/themes/${itm}`,
                 );
                 const result = themeLib.validateTheme(theme);
                 if (result.success === true) {
@@ -852,12 +910,12 @@ export default {
                   }
                   themeData[itm] = Object.assign(
                     { fileName: itm },
-                    result.data
+                    result.data,
                   );
                 } else {
                   alert("failed parsing theme data due to " + result.message);
                 }
-              })
+              }),
             );
           }
 
@@ -875,55 +933,90 @@ export default {
 
                 desktopConfig.theme = e;
                 themeLib.setCurrentTheme(themeData[e]);
+                wallpaperPreview.attr({
+                  src: desktopConfig.useThemeWallpaper
+                    ? themeData[e].wallpaper
+                    : desktopConfig.wallpaper,
+                });
                 save();
               },
-              selectedTheme
+              selectedTheme,
             )
             .class("if", "mc");
 
-          new Html("span")
-            .appendMany(
-              new Html("input")
-                .attr({
-                  type: "checkbox",
-                  id: Root.PID + "lc",
-                  checked:
-                    desktopConfig.useThemeWallpaper === true ? true : null,
-                })
-                .on("input", async (e) => {
-                  desktopConfig.useThemeWallpaper = e.target.checked;
-                  if (desktopConfig.theme.endsWith(".theme")) {
-                    const currentTheme = themeLib.validateTheme(
-                      await vfs.readFile(
-                        "Root/Pluto/config/themes/" + desktopConfig.theme
-                      )
-                    );
+          let useThemeWallpaperSpan = new Html("span").appendTo(container);
 
-                    if (currentTheme.success === true) {
-                      if (desktopConfig.useThemeWallpaper === true) {
-                        /// use wallpaper from theme
-                        themeLib.setWallpaper(currentTheme.data.wallpaper);
-                      } else {
-                        /// don't use wallpaper from theme
-                        themeLib.setWallpaper("default");
-                      }
-                    } else {
-                      Root.Modal.alert(
-                        "Error",
-                        "Failed to save: " + currentTheme.message
-                      );
-                      return;
-                    }
+          let themeWallpaperCheckbox = new Html("input")
+            .attr({
+              type: "checkbox",
+              id: Root.PID + "lc",
+              checked: desktopConfig.useThemeWallpaper === true ? true : null,
+            })
+            .on("input", async (e) => {
+              desktopConfig.useThemeWallpaper = e.target.checked;
+              if (desktopConfig.theme.endsWith(".theme")) {
+                const currentTheme = themeLib.validateTheme(
+                  await vfs.readFile(
+                    "Root/Pluto/config/themes/" + desktopConfig.theme,
+                  ),
+                );
+
+                if (currentTheme.success === true) {
+                  if (desktopConfig.useThemeWallpaper === true) {
+                    /// use wallpaper from theme
+                    themeLib.setWallpaper(currentTheme.data.wallpaper);
+                  } else {
+                    /// don't use wallpaper from theme
+                    themeLib.setWallpaper("default");
                   }
-                  save();
-                }),
-              new Html("label")
-                .attr({
-                  for: Root.PID + "lc",
-                })
-                .text(Root.Lib.getString("useThemeWallpaper"))
-            )
-            .appendTo(container);
+                  wallpaperPreview.attr({
+                    src: desktopConfig.useThemeWallpaper
+                      ? currentTheme.data.wallpaper
+                      : desktopConfig.wallpaper,
+                  });
+                } else {
+                  Root.Modal.alert(
+                    "Error",
+                    "Failed to save: " + currentTheme.message,
+                  );
+                  return;
+                }
+              }
+              save();
+            })
+            .appendTo(useThemeWallpaperSpan);
+
+          new Html("label")
+            .attr({
+              for: Root.PID + "lc",
+            })
+            .text(Root.Lib.getString("useThemeWallpaper"))
+            .appendTo(useThemeWallpaperSpan);
+
+          changeWallpaperButton.on("click", async (e) => {
+            let res = await openFile();
+            if (res) {
+              if (!res.startsWith("data:image/") && !res.startsWith("blob:")) {
+                Root.Modal.alert(
+                  "Error",
+                  Root.Lib.getString("imageLoadError"),
+                ).then((_) => {
+                  settingsWin.focus();
+                });
+                return false;
+              }
+              desktopConfig.wallpaper = res;
+              desktopConfig.useThemeWallpaper = false;
+              themeWallpaperCheckbox.attr({ checked: null });
+              themeLib.setWallpaper(res);
+              wallpaperPreview.attr({
+                src: desktopConfig.useThemeWallpaper
+                  ? currentTheme.data.wallpaper
+                  : desktopConfig.wallpaper,
+              });
+              save();
+            }
+          });
 
           const sidebarTypeSpan = new Html("span")
             .class("row", "ac", "js", "gap")
@@ -953,9 +1046,9 @@ export default {
                   document.documentElement.dataset.sidebarType = e;
                   save();
                 },
-                desktopConfig.sidebarType
+                desktopConfig.sidebarType,
               )
-              .class("if", "mc")
+              .class("if", "mc"),
           );
 
           const dockStyleSpan = new Html("span")
@@ -999,9 +1092,9 @@ export default {
 
                   save();
                 },
-                desktopConfig.dockStyle
+                desktopConfig.dockStyle,
               )
-              .class("if", "mc")
+              .class("if", "mc"),
           );
 
           new Html("span")
@@ -1030,7 +1123,7 @@ export default {
                 .attr({
                   for: Root.PID + "ds",
                 })
-                .text(Root.Lib.getString("dockShowTray"))
+                .text(Root.Lib.getString("dockShowTray")),
             )
             .appendTo(container);
 
@@ -1061,7 +1154,7 @@ export default {
                 .attr({
                   for: Root.PID + "da",
                 })
-                .text(Root.Lib.getString("dockShowAssistant"))
+                .text(Root.Lib.getString("dockShowAssistant")),
             )
             .appendTo(container);
 
@@ -1087,9 +1180,9 @@ export default {
                   save();
                 },
                 desktopConfig.language,
-                "unset"
+                "unset",
               )
-              .class("if", "mc")
+              .class("if", "mc"),
           );
         },
         async network() {
@@ -1105,12 +1198,12 @@ export default {
               resultTab.clear();
               let d1 = new Date();
               const req1 = await fetch(
-                "https://zeon.dev" + "?dummy=" + Date.now()
+                "https://zeon.dev" + "?dummy=" + Date.now(),
               );
               let d2 = new Date();
               let d3 = new Date();
               const req2 = await fetch(
-                "https://zeon.dev" + "?dummy=" + Date.now()
+                "https://zeon.dev" + "?dummy=" + Date.now(),
               );
               let d4 = new Date();
               if (req1.status === 200 && req2.status === 200) {
@@ -1151,13 +1244,13 @@ export default {
                     new Html("span").text(
                       Root.Lib.getString("networkTestResult", {
                         status: averageResponse,
-                      }) + "\n"
+                      }) + "\n",
                     ),
                     new Html("span").class("muted").text(
                       Root.Lib.getString("networkTestMs", {
                         responseTime: averageResponseTime,
-                      })
-                    )
+                      }),
+                    ),
                   )
                   .appendTo(resultTab);
               } else {
@@ -1166,7 +1259,7 @@ export default {
                   Root.Lib.getString("networkTestError", {
                     req1Status: req1.status,
                     req2Status: req2.status,
-                  })
+                  }),
                 );
               }
             })
@@ -1217,7 +1310,7 @@ export default {
                       const a = (
                         await import(
                           \`data:text/javascript,${encodeURIComponent(
-                            await vfs.readFile(`Root/Pluto/apps/${name}.app`)
+                            await vfs.readFile(`Root/Pluto/apps/${name}.app`),
                           )}\`
                         )
                       ).default;
@@ -1267,13 +1360,13 @@ export default {
                       new Html("span").text(app.description), // Description
                       new Html("span")
                         .class("label-light")
-                        .text(`(supports core ${app.ver})`) //
-                    )
+                        .text(`(supports core ${app.ver})`), //
+                    ),
                   ).class("mt-2");
                 }
 
                 window.addEventListener("message", messageWatcher);
-              })
+              }),
             );
           } else {
             new Html("span")
@@ -1302,11 +1395,11 @@ export default {
                     new Html("span")
                       .styleJs({ fontWeight: "bold" })
                       .text(p.pkg.name),
-                    new Html("span").class("badge").text(p.pkg.type)
+                    new Html("span").class("badge").text(p.pkg.type),
                   ),
                 new Html("span")
                   .styleJs({ fontWeight: "normal" })
-                  .text(p.pkg.description)
+                  .text(p.pkg.description),
               )
               .appendTo(knownPackages);
           });
@@ -1327,15 +1420,15 @@ export default {
               .appendMany(
                 new Html("tr").appendMany(
                   new Html("th").text(
-                    Root.Lib.getString("securityTableItemName")
+                    Root.Lib.getString("securityTableItemName"),
                   ),
                   new Html("th").text(
-                    Root.Lib.getString("securityTableItemSafe")
+                    Root.Lib.getString("securityTableItemSafe"),
                   ),
                   new Html("th").text(
-                    Root.Lib.getString("securityTableItemDelete")
-                  )
-                )
+                    Root.Lib.getString("securityTableItemDelete"),
+                  ),
+                ),
               )
               .appendTo(table);
 
@@ -1350,7 +1443,7 @@ export default {
                       new Html("td").text(
                         dc[i].dangerous === true
                           ? Root.Lib.getString("no")
-                          : Root.Lib.getString("yes")
+                          : Root.Lib.getString("yes"),
                       ),
                       new Html("td").appendMany(
                         dc[i].dangerous === true
@@ -1362,9 +1455,9 @@ export default {
                               })
                           : new Html("button")
                               .attr({ disabled: true })
-                              .text(Root.Lib.getString("delete"))
-                      )
-                    )
+                              .text(Root.Lib.getString("delete")),
+                      ),
+                    ),
                   )
                   .appendTo(table);
               }
@@ -1384,16 +1477,16 @@ export default {
             .appendTo(container);
 
           let settingsConfig = JSON.parse(
-            await vfs.readFile("Root/Pluto/config/settingsConfig.json")
+            await vfs.readFile("Root/Pluto/config/settingsConfig.json"),
           );
           console.log(settingsConfig);
           if (settingsConfig === null) {
             await vfs.writeFile(
               "Root/Pluto/config/settingsConfig.json",
-              `{"warnSecurityIssues": true}`
+              `{"warnSecurityIssues": true}`,
             );
             settingsConfig = JSON.parse(
-              await vfs.readFile("Root/Pluto/config/settingsConfig.json")
+              await vfs.readFile("Root/Pluto/config/settingsConfig.json"),
             );
           }
 
@@ -1409,14 +1502,14 @@ export default {
                   settingsConfig.warnSecurityIssues = e.target.checked;
                   await vfs.writeFile(
                     "Root/Pluto/config/settingsConfig.json",
-                    JSON.stringify(settingsConfig)
+                    JSON.stringify(settingsConfig),
                   );
                 }),
               new Html("label")
                 .attr({
                   for: Root.PID + "lc",
                 })
-                .text(Root.Lib.getString("securityCheckEveryStartup"))
+                .text(Root.Lib.getString("securityCheckEveryStartup")),
             )
             .appendTo(container);
         },
