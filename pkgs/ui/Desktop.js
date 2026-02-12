@@ -15,7 +15,7 @@ export default {
   ],
   optInToEvents: true,
   exec: async function (Root) {
-    let wrapper; // Lib.html | undefined
+    let wrapper;
     let MyWindow;
 
     console.log("Hello from example package", Root.Lib);
@@ -36,7 +36,7 @@ export default {
     let codeScanner = await Root.Core.startPkg("lib:CodeScanner");
 
     let appearanceConfig = JSON.parse(
-      await vfs.readFile("Root/Pluto/config/appearanceConfig.json")
+      await vfs.readFile("Root/Pluto/config/appearanceConfig.json"),
     );
 
     let wallpaper = "./assets/wallpapers/space.png";
@@ -66,11 +66,18 @@ export default {
       })
       .appendTo(wrapper);
 
+    // Modified style to allow absolute positioning of children
     const iconsWrapper = new Root.Lib.html("div")
       .class("desktop-apps")
       .style({
         transition:
           "opacity var(--long-animation-duration) var(--easing-function)",
+        position: "absolute",
+        top: "0",
+        left: "0",
+        width: "100%",
+        height: "100%",
+        "pointer-events": "none", // Let clicks pass through to background if not on icon
       })
       .appendTo(wrapper);
 
@@ -78,16 +85,12 @@ export default {
       const x = await Root.Modal.prompt(
         "Filesystem restore",
         "Looks like you have an old file system.\nWould you like to mount it?",
-        wrapper
+        wrapper,
       );
 
       if (x === true) {
-        // Do the thing the thing
-        // const vfs = await l.loadLibrary("VirtualFS");
-
-        // Root -> oldFs
         vfs.fileSystem.Root["oldFs"] = JSON.parse(
-          localStorage.getItem("oldVFS")
+          localStorage.getItem("oldVFS"),
         );
         await vfs.save();
         localStorage.removeItem("oldVFS");
@@ -97,7 +100,7 @@ export default {
         Root.Modal.alert(
           "Filesystem restore",
           "Your old filesystem has been mounted to the 'oldFs' folder.",
-          wrapper
+          wrapper,
         );
       }
     }
@@ -111,91 +114,179 @@ export default {
         "z-index": -1,
       });
 
-      // new Root.Lib.html("div")
-      //   .html(`<svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="css-i6dzq1"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`)
-      //   .on("dragstart", (e) => {
-      //     mouseSpace.x = fileManager.elm.style.left.slice(0, -2) - e.clientX
-      //     mouseSpace.y = fileManager.elm.style.top.slice(0, -2) - e.clientY
-      //   })
-      //   .on("dragend", (e) => {
-      //     if (e.x + e.y == 0) return
-      //     fileManager.elm.style.left = (e.x + mouseSpace.x) + "px"
-      //     fileManager.elm.style.top = (e.y + mouseSpace.y) + "px"
-      //   })
-      //   .on("dblclick", (e) => {
-      //     Root.Core.startPkg('apps:FileManager');
-      //   }).appendTo(fileManager);
-
-      // new Root.Lib.html("span")
-      //   .text("File Manager")
-      //   .style({ color: 'white' })
-      //   .appendTo(fileManager)
-
       const desktopDirectory = "Root/Desktop";
       const fileList = await vfs.list(desktopDirectory);
 
-      function createDesktopIcon(fileName, icon, fn) {
-        const mouse = { x: 0, y: 0 };
+      // --- LAYOUT SYSTEM START ---
+      const layoutPath = "Root/Pluto/config/desktopLayout.json";
+      let desktopLayout = {};
+      if (await vfs.exists(layoutPath)) {
+        try {
+          desktopLayout = JSON.parse(await vfs.readFile(layoutPath));
+        } catch (e) {
+          console.error("Failed to load desktop layout", e);
+        }
+      }
+
+      const GRID_W = 100;
+      const GRID_H = 110;
+      const occupiedSlots = new Set();
+
+      const saveLayout = async () => {
+        await vfs.writeFile(layoutPath, JSON.stringify(desktopLayout));
+      };
+
+      // Mark slots occupied by existing config
+      fileList.forEach((file) => {
+        if (desktopLayout[file.item]) {
+          const { x, y } = desktopLayout[file.item];
+          occupiedSlots.add(`${x},${y}`);
+        }
+      });
+
+      // AUto-Arrange
+      fileList.forEach((file) => {
+        if (!desktopLayout[file.item]) {
+          let x = 10;
+          let y = 10;
+          let found = false;
+          // Simple grid search algorithm
+          while (!found) {
+            if (!occupiedSlots.has(`${x},${y}`)) {
+              desktopLayout[file.item] = { x, y };
+              occupiedSlots.add(`${x},${y}`);
+              found = true;
+            } else {
+              y += GRID_H;
+              // If column fills up (arbitrary height limit or window height), move to next column
+              if (y > window.innerHeight - 100) {
+                y = 10;
+                x += GRID_W;
+              }
+            }
+          }
+        }
+      });
+
+      function createDesktopIcon(fileName, icon, fn, rawFileName) {
         let lastTapTime = 0;
+        let isDragging = false;
+
+        const pos = desktopLayout[rawFileName] || { x: 10, y: 10 };
+
         let iconWrapper = new Root.Lib.html("div")
           .class("desktop-icon")
+          .style({
+            position: "absolute",
+            left: pos.x + "px",
+            top: pos.y + "px",
+            "pointer-events": "auto", // Re-enable pointer events for the icon
+            width: "80px",
+            "text-align": "center",
+          })
           .append(
-            new Root.Lib.html("div").html(Root.Lib.icons[icon]).class("icon")
+            new Root.Lib.html("div").html(Root.Lib.icons[icon]).class("icon"),
           )
           .append(
             new Root.Lib.html("div")
               .append(new Root.Lib.html().text(fileName).class("text"))
-              .class("text-wrapper")
+              .class("text-wrapper"),
           )
           .appendTo(iconsWrapper)
-          .on("dblclick", (_) => fn(Root.Core))
+          .on("dblclick", (_) => {
+            if (!isDragging) fn(Root.Core);
+          })
           .on("touchstart", (e) => {
             const currentTime = new Date().getTime();
             const tapInterval = currentTime - lastTapTime;
-
             if (tapInterval < 300 && tapInterval > 0) {
               fn(Root.Core);
               e.preventDefault();
             }
-
             lastTapTime = currentTime;
           })
-          .on("dragstart", (e) => {
-            console.log(e);
-            mouse.x = e.clientX;
-            mouse.y = e.clientY;
-          })
-          .on("drag", (e) => {
-            console.log(e);
-            iconWrapper.style({
-              left: mouse.x - e.x,
-              top: mouse.y - e.y,
-            });
+          .on("mousedown", (e) => {
+            if (e.button !== 0) return; // Only left click
+            e.preventDefault();
+
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const elemLeft = parseInt(iconWrapper.elm.style.left || 0);
+            const elemTop = parseInt(iconWrapper.elm.style.top || 0);
+
+            let hasMoved = false;
+
+            const onMove = (ev) => {
+              hasMoved = true;
+              isDragging = true;
+              const dx = ev.clientX - startX;
+              const dy = ev.clientY - startY;
+
+              iconWrapper.style({
+                left: elemLeft + dx + "px",
+                top: elemTop + dy + "px",
+                "z-index": "100", // Bring to front while dragging
+              });
+            };
+
+            const onUp = (ev) => {
+              window.removeEventListener("mousemove", onMove);
+              window.removeEventListener("mouseup", onUp);
+
+              iconWrapper.style({ "z-index": "" });
+
+              if (hasMoved) {
+                // SNAP TO GRID
+                const currentLeft = parseInt(iconWrapper.elm.style.left || 0);
+                const currentTop = parseInt(iconWrapper.elm.style.top || 0);
+
+                let snapX = Math.round(currentLeft / GRID_W) * GRID_W;
+                let snapY = Math.round(currentTop / GRID_H) * GRID_H;
+
+                if (snapX < 0) snapX = 10;
+                if (snapY < 0) snapY = 10;
+
+                // Animate snap
+                iconWrapper.style({
+                  left: snapX + "px",
+                  top: snapY + "px",
+                });
+
+                // Save to persistence
+                desktopLayout[rawFileName] = { x: snapX, y: snapY };
+                saveLayout();
+
+                // Small timeout to prevent dblclick from firing immediately after drag release
+                setTimeout(() => {
+                  isDragging = false;
+                }, 100);
+              }
+            };
+
+            window.addEventListener("mousemove", onMove);
+            window.addEventListener("mouseup", onUp);
           });
+
         return iconWrapper;
       }
 
       let FileMappings = await Root.Lib.loadLibrary("FileMappings");
-
       let mappings = [];
 
       for (let i = 0; i < fileList.length; i++) {
         let file = fileList[i];
-
         let mapping = await FileMappings.retrieveAllMIMEdata(
           desktopDirectory + "/" + file.item,
-          vfs
+          vfs,
         );
-
-        // console.log("HERE MAPIONG", mapping);
-
         mappings.push(
           Object.assign(
             {
               type: file.type,
+              originalItem: file.item, // Keep track of filename for saving
             },
-            mapping
-          )
+            mapping,
+          ),
         );
       }
 
@@ -208,8 +299,17 @@ export default {
       });
 
       for (const mapping of mappings) {
-        createDesktopIcon(mapping.name, mapping.icon, mapping.onClick);
+        // Pass originalItem (filename) to createDesktopIcon
+        createDesktopIcon(
+          mapping.name,
+          mapping.icon,
+          mapping.onClick,
+          mapping.originalItem,
+        );
       }
+
+      // Save initial auto-arrange if items were added
+      saveLayout();
     }
 
     const preloadImage = new Image();
@@ -229,7 +329,6 @@ export default {
           item: Root.Lib.getString("systemApp_FileManager"),
           async select() {
             let fm = await Root.Core.startPkg("apps:FileManager", true, true);
-
             fm.proc.send({ type: "loadFolder", path: "Root/Desktop" });
           },
         },
@@ -242,22 +341,12 @@ export default {
       ]);
     });
 
-    // let topBar = new Root.Lib.html("div").appendTo(wrapper).class("topBar");
-    // let tab1 = new Root.Lib.html("div")
-    //   .appendTo(topBar)
-    //   .class("topBarItem")
-    //   .html("Pluto");
-    // let tab2 = new Root.Lib.html("div")
-    //   .appendTo(topBar)
-    //   .class("topBarItem")
-    //   .html("Application");
-
     let dock = new Root.Lib.html("div").appendTo(wrapper).class("dock");
 
     let menuButton = new Root.Lib.html("button")
       .class("toolbar-button")
       .html(
-        `<svg width="24" height="24" viewBox="0 0 18 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M9 15.3713C12.7949 15.3713 15.8713 12.2949 15.8713 8.5C15.8713 4.70511 12.7949 1.62874 9 1.62874C5.20511 1.62874 2.12874 4.70511 2.12874 8.5C2.12874 12.2949 5.20511 15.3713 9 15.3713ZM9 17C13.6944 17 17.5 13.1944 17.5 8.5C17.5 3.80558 13.6944 0 9 0C4.30558 0 0.5 3.80558 0.5 8.5C0.5 13.1944 4.30558 17 9 17Z" fill="currentColor"/></svg>`
+        `<svg width="24" height="24" viewBox="0 0 18 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M9 15.3713C12.7949 15.3713 15.8713 12.2949 15.8713 8.5C15.8713 4.70511 12.7949 1.62874 9 1.62874C5.20511 1.62874 2.12874 4.70511 2.12874 8.5C2.12874 12.2949 5.20511 15.3713 9 15.3713ZM9 17C13.6944 17 17.5 13.1944 17.5 8.5C17.5 3.80558 13.6944 0 9 0C4.30558 0 0.5 3.80558 0.5 8.5C0.5 13.1944 4.30558 17 9 17Z" fill="currentColor"/></svg>`,
       )
       .appendTo(dock);
 
@@ -301,12 +390,12 @@ export default {
       const appsToClose = Root.Core.processList
         .filter((f) => f !== null)
         .filter(
-          (f) => f.name.startsWith("apps:") || f.name.startsWith("none:")
+          (f) => f.name.startsWith("apps:") || f.name.startsWith("none:"),
         );
 
       if (appsToClose.length > 0) {
         const result = await Root.Modal.prompt(
-          "Are you sure you want to end this session? You will lose all unsaved changes."
+          "Are you sure you want to end this session? You will lose all unsaved changes.",
         );
 
         if (!result) return;
@@ -327,8 +416,8 @@ export default {
                 a.proc.end();
                 resolve(true);
               });
-            })
-          )
+            }),
+          ),
         );
       });
 
@@ -350,8 +439,8 @@ export default {
         ) {
           const x = themeLib.validateTheme(
             await vfs.readFile(
-              "Root/Pluto/config/themes/" + appearanceConfig.theme
-            )
+              "Root/Pluto/config/themes/" + appearanceConfig.theme,
+            ),
           );
 
           if (x !== undefined && x.success === true) {
@@ -364,7 +453,7 @@ export default {
           }
         } else {
           themeLib.setCurrentTheme(
-            '{"version":1,"name":"Dark","description":"A built-in theme.","values":null,"cssThemeDataset":"dark","wallpaper":"./assets/wallpapers/space.png"}'
+            '{"version":1,"name":"Dark","description":"A built-in theme.","values":null,"cssThemeDataset":"dark","wallpaper":"./assets/wallpapers/space.png"}',
           );
         }
       }, 2000);
@@ -400,7 +489,7 @@ export default {
             });
           let asApps = [];
           const asExists = await vfs.whatIs(
-            "Registry/AppStore/_AppStoreIndex.json"
+            "Registry/AppStore/_AppStoreIndex.json",
           );
           if (asExists !== null) {
             console.log(asExists);
@@ -423,7 +512,7 @@ export default {
 
               if (app.type === "desktop") {
                 const data = await FileMappings.retrieveAllMIMEdata(
-                  "Root/Desktop/" + app.item
+                  "Root/Desktop/" + app.item,
                 );
 
                 mapping = data;
@@ -433,7 +522,7 @@ export default {
                 description = data.fullName;
               } else if (app.type === "appStore") {
                 const data = await FileMappings.retrieveAllMIMEdata(
-                  "Registry/AppStore/" + app.item
+                  "Registry/AppStore/" + app.item,
                 );
 
                 mapping = data;
@@ -461,15 +550,15 @@ export default {
                         ? new Html("div")
                             .class("app-description")
                             .text(description)
-                        : null
-                    )
+                        : null,
+                    ),
                 )
                 .on("click", async (e) => {
                   if (app.type === "desktop") {
                     // View the shortcut file
                     try {
                       let shrt = JSON.parse(
-                        await vfs.readFile("Root/Desktop/" + app.item)
+                        await vfs.readFile("Root/Desktop/" + app.item),
                       );
 
                       // console.log(shrt);
@@ -485,19 +574,19 @@ export default {
                   } else {
                     try {
                       const appData = await vfs.readFile(
-                        "Root/Pluto/apps/" + app.item
+                        "Root/Pluto/apps/" + app.item,
                       );
                       await Root.Core.startPkg(
                         "data:text/javascript," + encodeURIComponent(appData),
                         false,
-                        false
+                        false,
                       );
                     } catch (e) {
                       console.log("Couldn't load the application");
                     }
                   }
                 });
-            })
+            }),
           );
 
           let powerBtnPopup;
@@ -508,7 +597,7 @@ export default {
                 toggleMenu();
 
                 const result = await Root.Modal.prompt(
-                  "Are you sure you want to refresh? You will lose all unsaved changes."
+                  "Are you sure you want to refresh? You will lose all unsaved changes.",
                 );
 
                 if (result) location.reload();
@@ -546,8 +635,8 @@ export default {
                     .text(
                       userData.onlineAccount === true
                         ? "Zeon Account"
-                        : "Local Account"
-                    )
+                        : "Local Account",
+                    ),
                 ),
               new Root.Lib.html("button")
                 .class("small")
@@ -575,11 +664,11 @@ export default {
                         bcr.bottom,
                         powerBtnItems.map((item) => {
                           let text = `<span>${Root.Lib.escapeHtml(
-                            item.item
+                            item.item,
                           )}</span>`;
                           if (item.icon) {
                             text = `${item.icon}<span>${Root.Lib.escapeHtml(
-                              item.item
+                              item.item,
                             )}</span>`;
                           }
                           if (item.type !== undefined) {
@@ -604,23 +693,23 @@ export default {
                         null,
                         document.body,
                         true,
-                        true
+                        true,
                       )
                       .styleJs({
                         minWidth: "150px",
                       })
                       .appendTo("body");
                   }
-                })
+                }),
             ),
             new Html("div")
               .class("spacer")
               .appendMany(
                 new Html("div").class("space"),
                 new Html("div").text("Apps"),
-                new Html("div").class("space")
+                new Html("div").class("space"),
               ),
-            new Html("div").class("apps").appendMany(...appsHtml)
+            new Html("div").class("apps").appendMany(...appsHtml),
           );
 
           dock.elm.insertBefore(menuElm.elm, dock.elm.lastChild);
@@ -675,7 +764,7 @@ export default {
             "row",
             "gap-md",
             "w-100",
-            "mb-2"
+            "mb-2",
           );
           const chatInputText = new Html("input")
             .class("fg")
@@ -731,13 +820,13 @@ export default {
             if (t.includes("{greeting}")) {
               t = t.replace(
                 "{greeting}",
-                greetings[Math.floor(greetings.length * Math.random())]
+                greetings[Math.floor(greetings.length * Math.random())],
               );
             }
             if (t.includes("{whatCanYouDo}")) {
               t = t.replace(
                 "{whatCanYouDo}",
-                whatCanYouDo[Math.floor(Math.random() * whatCanYouDo.length)]
+                whatCanYouDo[Math.floor(Math.random() * whatCanYouDo.length)],
               );
             }
             if (t.includes("{launchRandomApp}")) {
@@ -749,31 +838,31 @@ export default {
               if (launchStr.includes("you")) {
                 t = t.replace(
                   "{launchRandomApp}",
-                  `${launchStr} ${randomApp}?`
+                  `${launchStr} ${randomApp}?`,
                 );
               } else {
                 t = t.replace(
                   "{launchRandomApp}",
-                  `${launchStr} ${randomApp}.`
+                  `${launchStr} ${randomApp}.`,
                 );
               }
             }
             if (t.includes("{howAreYou}")) {
               t = t.replace(
                 "{howAreYou}",
-                howAreYou[Math.floor(Math.random() * howAreYou.length)]
+                howAreYou[Math.floor(Math.random() * howAreYou.length)],
               );
             }
             if (t.includes("{logOut}")) {
               t = t.replace(
                 "{logOut}",
-                logOut[Math.floor(Math.random() * logOut.length)]
+                logOut[Math.floor(Math.random() * logOut.length)],
               );
             }
             if (t.includes("{version}")) {
               t = t.replace(
                 "{version}",
-                versions[Math.floor(Math.random() * versions.length)]
+                versions[Math.floor(Math.random() * versions.length)],
               );
             }
 
@@ -783,7 +872,7 @@ export default {
                 new Html("span")
                   .class("row")
                   .html(Root.Lib.icons.send.replace(/"24"/g, '"16"')),
-                new Html("span").text(t)
+                new Html("span").text(t),
               )
               .on("click", (e) => {
                 ask(t);
@@ -818,17 +907,17 @@ export default {
             })
             .appendMany(
               new Html("span").html(
-                Root.Lib.icons.plutoAssistant.replace(/"24"/g, '"48"')
+                Root.Lib.icons.plutoAssistant.replace(/"24"/g, '"48"'),
               ),
               new Html("span").class("h2").text("Pluto Assistant"),
               new Html("span")
                 .styleJs({ textAlign: "center" })
                 .html(
-                  "Assistant is currently a work in progress.<br>It can help you perform some actions on Pluto."
+                  "Assistant is currently a work in progress.<br>It can help you perform some actions on Pluto.",
                 ),
               new Html("div").class("space"),
               new Html("span").text("Try asking:"),
-              ...randomQuestions
+              ...randomQuestions,
             )
             .appendTo(chatDiv);
           chatDiv.style({ "overflow-y": "hidden" });
@@ -870,7 +959,7 @@ export default {
                   padding: "8px 14px",
                 })
                 .class(classToAdd)
-                .text(text)
+                .text(text),
             );
           }
 
@@ -881,16 +970,19 @@ export default {
 
             addMessage(1, text);
 
-            setTimeout(async () => {
-              const result = await Assistant.ask(text);
-              switch (result.type) {
-                case "response":
-                  addMessage(0, result.text);
-                  break;
-              }
+            setTimeout(
+              async () => {
+                const result = await Assistant.ask(text);
+                switch (result.type) {
+                  case "response":
+                    addMessage(0, result.text);
+                    break;
+                }
 
-              chatDiv.elm.scrollTop = chatDiv.elm.scrollHeight;
-            }, 750 * Math.min(Math.max(0.5, Math.random()), 0.9));
+                chatDiv.elm.scrollTop = chatDiv.elm.scrollHeight;
+              },
+              750 * Math.min(Math.max(0.5, Math.random()), 0.9),
+            );
           }
 
           chatInputText.on("keydown", (e) => {
@@ -1129,7 +1221,7 @@ export default {
                     new Html("div")
                       .styleJs({ width: "24px", height: "24px" })
                       .class("app-icon")
-                      .html(icon)
+                      .html(icon),
                   )
                   .on("mouseenter", () => {
                     if (popup) {
@@ -1142,7 +1234,7 @@ export default {
                         bcr.bottom - 36,
                         t.name || app.proc.name || app.name,
                         document.body,
-                        true
+                        true,
                       );
 
                       requestAnimationFrame(() => {
@@ -1183,7 +1275,7 @@ export default {
 
                 // return { pid: app.pid, item };
                 return item;
-              })
+              }),
             );
 
             return appsHtml.filter((m) => m !== false);
@@ -1206,9 +1298,9 @@ export default {
                       "fg",
                       "fc",
                       "mt-2",
-                      "mb-2"
+                      "mb-2",
                     )
-                    .text("No apps are using the tray.")
+                    .text("No apps are using the tray."),
                 );
               trayElm.style({
                 width: "160px",
@@ -1220,7 +1312,7 @@ export default {
               trayElm
                 .clear()
                 .appendMany(
-                  new Html("div").class("apps").appendMany(...trayApps)
+                  new Html("div").class("apps").appendMany(...trayApps),
                 );
             }
           }
@@ -1258,7 +1350,7 @@ export default {
       .appendTo(dock);
 
     const quickAccessButtonText = new Root.Lib.html("spam").appendTo(
-      quickAccessButton
+      quickAccessButton,
     );
 
     updateTime();
@@ -1273,7 +1365,7 @@ export default {
           (_) =>
             onclickFocusWindow &&
             onclickFocusWindow.focus &&
-            onclickFocusWindow.focus()
+            onclickFocusWindow.focus(),
         )
         .text(name);
     }
@@ -1314,16 +1406,16 @@ export default {
 
     // scan for dangerous files
     let settingsConfig = JSON.parse(
-      await vfs.readFile("Root/Pluto/config/settingsConfig.json")
+      await vfs.readFile("Root/Pluto/config/settingsConfig.json"),
     );
     console.log(settingsConfig);
     if (settingsConfig === null) {
       await vfs.writeFile(
         "Root/Pluto/config/settingsConfig.json",
-        `{"warnSecurityIssues": true}`
+        `{"warnSecurityIssues": true}`,
       );
       settingsConfig = JSON.parse(
-        await vfs.readFile("Root/Pluto/config/settingsConfig.json")
+        await vfs.readFile("Root/Pluto/config/settingsConfig.json"),
       );
     }
 
@@ -1345,7 +1437,7 @@ export default {
           // make alert modal popup
           let prmpt = await Root.Modal.prompt(
             "Alert",
-            "Your computer contains a potentially dangerous application!\nDo you want to review it?"
+            "Your computer contains a potentially dangerous application!\nDo you want to review it?",
           );
           console.log(prmpt);
           if (prmpt == true) {
@@ -1399,7 +1491,7 @@ export default {
           case "setWallpaper":
             if (data === "default") {
               appearanceConfig = JSON.parse(
-                await vfs.readFile("Root/Pluto/config/appearanceConfig.json")
+                await vfs.readFile("Root/Pluto/config/appearanceConfig.json"),
               );
               smoothlySwapBackground(appearanceConfig.wallpaper);
             } else {
@@ -1426,7 +1518,7 @@ export default {
             if (data.type === "pkgStart") {
               if (dockItemsList[data.data.pid]) return;
               const p = Root.Core.windowsList.find(
-                (p) => p.options.pid === data.data.pid
+                (p) => p.options.pid === data.data.pid,
               );
               if (p) {
                 console.log("winSys", p);
