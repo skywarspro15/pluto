@@ -23,6 +23,7 @@ export default {
       welcome_page2_language_es_ES: "Spanish (Spain)",
       welcome_page2_language_pt_BR: "Portuguese (Brazil)",
       welcome_page2_language_fil_PH: "Filipino (Pilipinas)",
+      welcome_page2_language_ja_JP: "日本語 (Japanese)",
       welcome_page3_header: "Personalize",
       welcome_page3_body: "Select your favorite theme.",
       welcome_page4_header: "You have now set up your system!",
@@ -98,6 +99,25 @@ export default {
       welcome_page4_header: "Dito nagtatapos ang setup!",
       welcome_page4_body:
         "I-click ang 'Tapos' para i-quit ang setup at mag-save ng settings.",
+    },
+    ja_JP: {
+      welcome_window_title: "ようこそ",
+      welcome_page1_header: "Plutoへようこそ",
+      welcome_page1_body:
+        "Plutoへようこそ！Plutoはウェブ向けに構築された新しい「デスクトップ環境」です。\n\n「次へ」を押してセットアップを開始しましょう。",
+      welcome_page2_header: "言語の設定",
+      welcome_page2_body: "現在の言語は 日本語 です。",
+      welcome_page2_language_en_US: "英語 (アメリカ)",
+      welcome_page2_language_en_GB: "英語 (イギリス)",
+      welcome_page2_language_de_DE: "ドイツ語 (ドイツ)",
+      welcome_page2_language_es_ES: "スペイン語 (スペイン)",
+      welcome_page2_language_pt_BR: "ポルトガル語 (ブラジル)",
+      welcome_page2_language_fil_PH: "フィリピン語 (フィリピン)",
+      welcome_page3_header: "個人用設定",
+      welcome_page3_body: "お好みのテーマを選択してください。",
+      welcome_page4_header: "システムのセットアップが完了しました！",
+      welcome_page4_body:
+        "「完了」ボタンを押して設定を保存し、セットアップを終了します。",
     },
   },
   exec: async function (Root) {
@@ -258,7 +278,7 @@ export default {
               .appendTo(container),
             new Root.Lib.html("p")
               .text(Root.Lib.getString("welcome_page1_body"))
-              .appendTo(container)
+              .appendTo(container),
           )
           .appendTo(container);
 
@@ -303,7 +323,7 @@ export default {
                 }
               },
             };
-          })
+          }),
         ).class("ovh");
 
         let btnRow = new Root.Lib.html("div")
@@ -341,14 +361,14 @@ export default {
               if (t.type === "dir") return null;
 
               const result = await ThemeLib.validateTheme(
-                await vfs.readFile("Root/Pluto/config/themes/" + t.item)
+                await vfs.readFile("Root/Pluto/config/themes/" + t.item),
               );
               if (result.success === true) {
                 return result.data;
               } else {
                 return null;
               }
-            })
+            }),
           )
         ).filter((m) => m !== null);
 
@@ -364,7 +384,7 @@ export default {
                 currentTheme = themes[i].item;
               },
             };
-          })
+          }),
         );
 
         let btnRow = new Root.Lib.html("div")
@@ -417,7 +437,7 @@ export default {
           const appearanceConfigLocation =
             "Root/Pluto/config/appearanceConfig.json";
           const appearanceConfig = JSON.parse(
-            await vfs.readFile(appearanceConfigLocation)
+            await vfs.readFile(appearanceConfigLocation),
           );
 
           if (appearanceConfig) {
@@ -428,14 +448,14 @@ export default {
 
           await vfs.writeFile(
             appearanceConfigLocation,
-            JSON.stringify(appearanceConfig)
+            JSON.stringify(appearanceConfig),
           );
 
           Root.Lib.onEnd();
         } catch (e) {
           Root.Modal.alert(
             Root.Lib.getString("notice"),
-            Root.Lib.getString("welcome_failed_to_parse")
+            Root.Lib.getString("welcome_failed_to_parse"),
           );
         }
       },
