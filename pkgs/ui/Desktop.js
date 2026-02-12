@@ -1045,7 +1045,8 @@ export default {
 
     let playerElm = new Html("div")
       .styleJs({
-        background: "var(--neutral)",
+        background: "var(--root)",
+        border: "0.125rem solid var(--outline)",
         width: "350px",
         height: "150px",
         position: "fixed",
@@ -1058,6 +1059,16 @@ export default {
       })
       .appendTo(wrapper);
 
+    let middle = new Html("div")
+      .styleJs({
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "10px",
+        width: "100%",
+      })
+      .appendTo(playerElm);
+
     let left = new Html("div")
       .styleJs({
         width: "50%",
@@ -1068,7 +1079,7 @@ export default {
         justifyContent: "center",
         display: "none",
       })
-      .appendTo(playerElm);
+      .appendTo(middle);
     let right = new Html("div")
       .styleJs({
         width: "50%",
@@ -1077,7 +1088,7 @@ export default {
         justifyContent: "center",
         gap: "5px",
       })
-      .appendTo(playerElm);
+      .appendTo(middle);
 
     let albumCover = new Html("img")
       .attr({ src: "" })
