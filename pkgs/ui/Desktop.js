@@ -738,6 +738,15 @@ export default {
 
     const Assistant = await Root.Lib.loadLibrary("Assistant");
 
+    const neuralEngineService = Root.Core.services
+      .filter((x) => x !== null)
+      .find((x) => x.name === "NeuralEngine");
+
+    const neuralEngineState = await neuralEngineService.ref.getState();
+    console.log("Neural Engine State", neuralEngineState);
+
+    console.log("Neural Engine", neuralEngineService);
+
     async function toggleAssistant() {
       if (menuIsToggling) {
         return; // Return early if menu is currently toggling
@@ -913,7 +922,9 @@ export default {
               new Html("span")
                 .styleJs({ textAlign: "center" })
                 .html(
-                  "Assistant is currently a work in progress.<br>It can help you perform some actions on Pluto.",
+                  neuralEngineState.compatible
+                    ? "Work in progress. Ask me to help with actions on Pluto.<br>Neural Engine is available. Enable in Settings."
+                    : "Work in progress. Ask me to help with actions on Pluto.<br>Neural Engine not supported on this device.",
                 ),
               new Html("div").class("space"),
               new Html("span").text("Try asking:"),
