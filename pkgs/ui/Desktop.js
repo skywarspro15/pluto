@@ -240,8 +240,8 @@ export default {
                 const currentLeft = parseInt(iconWrapper.elm.style.left || 0);
                 const currentTop = parseInt(iconWrapper.elm.style.top || 0);
 
-                let snapX = Math.round(currentLeft / GRID_W) * GRID_W;
-                let snapY = Math.round(currentTop / GRID_H) * GRID_H;
+                let snapX = Math.round(currentLeft / GRID_W) * GRID_W + 10;
+                let snapY = Math.round(currentTop / GRID_H) * GRID_H + 10;
 
                 if (snapX < 0) snapX = 10;
                 if (snapY < 0) snapY = 10;
