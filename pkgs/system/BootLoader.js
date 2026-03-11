@@ -7,7 +7,7 @@ export default {
   ver: "v1.6.2", // Supports minimum Core version of v1.6.2
   type: "process",
   exec: async function (Root) {
-    const serviceList = ["Account"];
+    const serviceList = ["Account", "NeuralEngine"];
 
     // Root is just a temp name for the global object the core gives you
     if (pid !== -1) {
@@ -49,7 +49,7 @@ export default {
 
       if (await vfs.exists("Root/Pluto/config/fsVersionUpdate.txt")) {
         let version = await vfs.readFile(
-          "Root/Pluto/config/fsVersionUpdate.txt"
+          "Root/Pluto/config/fsVersionUpdate.txt",
         );
 
         if (Number(version) < Root.Lib.systemInfo.version) {
@@ -64,10 +64,10 @@ export default {
       console.log(Root.Lib.systemInfo);
       await vfs.writeFile(
         "Root/Pluto/config/fsVersionUpdate.txt",
-        Root.Lib.systemInfo.version.toString()
+        Root.Lib.systemInfo.version.toString(),
       );
       let appearanceConfig = JSON.parse(
-        await vfs.readFile("Root/Pluto/config/appearanceConfig.json")
+        await vfs.readFile("Root/Pluto/config/appearanceConfig.json"),
       );
 
       if (appearanceConfig.sidebarType) {
@@ -101,8 +101,8 @@ export default {
         ) {
           const x = themeLib.validateTheme(
             await vfs.readFile(
-              "Root/Pluto/config/themes/" + appearanceConfig.theme
-            )
+              "Root/Pluto/config/themes/" + appearanceConfig.theme,
+            ),
           );
 
           if (x !== undefined && x.success === true) {
@@ -115,7 +115,7 @@ export default {
           }
         } else {
           themeLib.setCurrentTheme(
-            '{"version":1,"name":"Dark","description":"A built-in theme.","values":null,"cssThemeDataset":"dark","wallpaper":"./assets/wallpapers/space.png"}'
+            '{"version":1,"name":"Dark","description":"A built-in theme.","values":null,"cssThemeDataset":"dark","wallpaper":"./assets/wallpapers/space.png"}',
           );
         }
       }
@@ -136,7 +136,7 @@ export default {
         const lgs = await Root.Core.startPkg(
           "ui:ActualLoginScreen",
           true,
-          true
+          true,
         );
 
         await lgs.launch();
@@ -144,7 +144,7 @@ export default {
 
       if (await vfs.exists("Root/Pluto/config/settingsConfig.json")) {
         let settingsConfig = JSON.parse(
-          await vfs.readFile("Root/Pluto/config/settingsConfig.json")
+          await vfs.readFile("Root/Pluto/config/settingsConfig.json"),
         );
         if (
           settingsConfig !== undefined &&
@@ -152,7 +152,7 @@ export default {
         ) {
           let appMapping = await FileMapping.retrieveAllMIMEdata(
             settingsConfig.bootApp,
-            vfs
+            vfs,
           );
           appMapping.onClick(Root.Core);
           // await Root.Core.startPkg(
@@ -186,7 +186,7 @@ export default {
             const p = await Root.Core.startPkg(
               "data:text/javascript," + encodeURIComponent(app),
               false,
-              true
+              true,
             );
 
             if (searchParams.has("data")) {

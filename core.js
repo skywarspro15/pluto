@@ -1,39 +1,39 @@
 // Pluto
 
-dispatchConsoleEvent = (argumentsArray, type) => {
-  document.dispatchEvent(
-    new CustomEvent("console-update", {
-      detail: argumentsArray,
-      type,
-    }),
-  );
-};
+// dispatchConsoleEvent = (argumentsArray, type) => {
+//   document.dispatchEvent(
+//     new CustomEvent("console-update", {
+//       detail: argumentsArray,
+//       type,
+//     }),
+//   );
+// };
 
-console.stdlog = console.log.bind(console);
-console.stderr = console.error.bind(console);
-console.stdinf = console.info.bind(console);
-console.stdwar = console.warn.bind(console);
-console.logs = [];
-console.log = function () {
-  dispatchConsoleEvent(Array.from(arguments), "verbose");
-  console.logs.push({ data: Array.from(arguments), type: "verbose" });
-  console.stdlog.apply(console, arguments);
-};
-console.error = function () {
-  dispatchConsoleEvent(Array.from(arguments), "error");
-  console.logs.push({ data: Array.from(arguments), type: "error" });
-  console.stderr.apply(console, arguments);
-};
-console.info = function () {
-  dispatchConsoleEvent(Array.from(arguments), "info");
-  console.logs.push({ data: Array.from(arguments), type: "info" });
-  console.stdinf.apply(console, arguments);
-};
-console.warn = function () {
-  dispatchConsoleEvent(Array.from(arguments), "warning");
-  console.logs.push({ data: Array.from(arguments), type: "warning" });
-  console.stdwar.apply(console, arguments);
-};
+// console.stdlog = console.log.bind(console);
+// console.stderr = console.error.bind(console);
+// console.stdinf = console.info.bind(console);
+// console.stdwar = console.warn.bind(console);
+// console.logs = [];
+// console.log = function () {
+//   dispatchConsoleEvent(Array.from(arguments), "verbose");
+//   console.logs.push({ data: Array.from(arguments), type: "verbose" });
+//   console.stdlog.apply(console, arguments);
+// };
+// console.error = function () {
+//   dispatchConsoleEvent(Array.from(arguments), "error");
+//   console.logs.push({ data: Array.from(arguments), type: "error" });
+//   console.stderr.apply(console, arguments);
+// };
+// console.info = function () {
+//   dispatchConsoleEvent(Array.from(arguments), "info");
+//   console.logs.push({ data: Array.from(arguments), type: "info" });
+//   console.stdinf.apply(console, arguments);
+// };
+// console.warn = function () {
+//   dispatchConsoleEvent(Array.from(arguments), "warning");
+//   console.logs.push({ data: Array.from(arguments), type: "warning" });
+//   console.stdwar.apply(console, arguments);
+// };
 
 (async () => {
   const semver = (await import("./assets/semver.min.js")).default;
