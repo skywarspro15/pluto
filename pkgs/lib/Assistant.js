@@ -1,204 +1,60 @@
 const verbs = [
-  {
-    verb: "hi",
-    action: "greeting",
-  },
-  {
-    verb: "hey",
-    action: "greeting",
-  },
-  {
-    verb: "hello",
-    action: "greeting",
-  },
-  {
-    verb: "sup",
-    action: "greeting",
-  },
-  {
-    verb: "yo",
-    action: "greeting",
-  },
+  { verb: "hi", action: "greeting" },
+  { verb: "hey", action: "greeting" },
+  { verb: "hello", action: "greeting" },
+  { verb: "sup", action: "greeting" },
+  { verb: "yo", action: "greeting" },
 
-  {
-    verb: "what version",
-    action: "version",
-  },
-  {
-    verb: "what version of pluto",
-    action: "version",
-  },
-  {
-    verb: "which version",
-    action: "version",
-  },
-  {
-    verb: "which version of pluto",
-    action: "version",
-  },
+  { verb: "what version", action: "version" },
+  { verb: "what version of pluto", action: "version" },
+  { verb: "which version", action: "version" },
+  { verb: "which version of pluto", action: "version" },
 
-  {
-    verb: "what can you do",
-    action: "howWorks",
-  },
-  {
-    verb: "what do you do",
-    action: "howWorks",
-  },
-  {
-    verb: "how do you work",
-    action: "howWorks",
-  },
+  { verb: "what can you do", action: "howWorks" },
+  { verb: "what do you do", action: "howWorks" },
+  { verb: "how do you work", action: "howWorks" },
 
-  {
-    verb: "hru",
-    action: "howAmI",
-  },
-  {
-    verb: "how are you",
-    action: "howAmI",
-  },
+  { verb: "hru", action: "howAmI" },
+  { verb: "how are you", action: "howAmI" },
 
-  {
-    verb: "launch",
-    action: "startPkg",
-  },
-  {
-    verb: "start",
-    action: "startPkg",
-  },
-  {
-    verb: "run",
-    action: "startPkg",
-  },
-  {
-    verb: "open",
-    action: "startPkg",
-  },
-  {
-    verb: "can you launch",
-    action: "startPkg",
-  },
-  {
-    verb: "can you start",
-    action: "startPkg",
-  },
-  {
-    verb: "can you run",
-    action: "startPkg",
-  },
-  {
-    verb: "can you open",
-    action: "startPkg",
-  },
-  {
-    verb: "will you launch",
-    action: "startPkg",
-  },
-  {
-    verb: "will you start",
-    action: "startPkg",
-  },
-  {
-    verb: "will you run",
-    action: "startPkg",
-  },
-  {
-    verb: "will you open",
-    action: "startPkg",
-  },
+  { verb: "launch", action: "startPkg" },
+  { verb: "start", action: "startPkg" },
+  { verb: "run", action: "startPkg" },
+  { verb: "open", action: "startPkg" },
+  { verb: "can you launch", action: "startPkg" },
+  { verb: "can you start", action: "startPkg" },
+  { verb: "can you run", action: "startPkg" },
+  { verb: "can you open", action: "startPkg" },
+  { verb: "will you launch", action: "startPkg" },
+  { verb: "will you start", action: "startPkg" },
+  { verb: "will you run", action: "startPkg" },
+  { verb: "will you open", action: "startPkg" },
 
-  {
-    verb: "thanks",
-    action: "thanks",
-  },
-  {
-    verb: "thank you",
-    action: "thanks",
-  },
-  {
-    verb: "thx",
-    action: "thanks",
-  },
-  {
-    verb: "cheers",
-    action: "thanks",
-  },
+  { verb: "thanks", action: "thanks" },
+  { verb: "thank you", action: "thanks" },
+  { verb: "thx", action: "thanks" },
+  { verb: "cheers", action: "thanks" },
 
-  {
-    verb: "bye",
-    action: "bye",
-  },
-  {
-    verb: "goodbye",
-    action: "bye",
-  },
-  {
-    verb: "cya",
-    action: "bye",
-  },
-  {
-    verb: "see ya",
-    action: "bye",
-  },
-  {
-    verb: "sleep well",
-    action: "bye",
-  },
+  { verb: "bye", action: "bye" },
+  { verb: "goodbye", action: "bye" },
+  { verb: "cya", action: "bye" },
+  { verb: "see ya", action: "bye" },
+  { verb: "sleep well", action: "bye" },
   { verb: "night", action: "bye" },
-  {
-    verb: "good night",
-    action: "bye",
-  },
+  { verb: "good night", action: "bye" },
 
-  {
-    verb: "logout",
-    action: "exitSession",
-  },
-  {
-    verb: "log out",
-    action: "exitSession",
-  },
-  {
-    verb: "end session",
-    action: "exitSession",
-  },
-  {
-    verb: "exit session",
-    action: "exitSession",
-  },
-  {
-    verb: "can you logout",
-    action: "exitSession",
-  },
-  {
-    verb: "can you log out",
-    action: "exitSession",
-  },
-  {
-    verb: "can you end session",
-    action: "exitSession",
-  },
-  {
-    verb: "can you exit session",
-    action: "exitSession",
-  },
-  {
-    verb: "could you logout",
-    action: "exitSession",
-  },
-  {
-    verb: "could you log out",
-    action: "exitSession",
-  },
-  {
-    verb: "could you end session",
-    action: "exitSession",
-  },
-  {
-    verb: "could you exit session",
-    action: "exitSession",
-  },
+  { verb: "logout", action: "exitSession" },
+  { verb: "log out", action: "exitSession" },
+  { verb: "end session", action: "exitSession" },
+  { verb: "exit session", action: "exitSession" },
+  { verb: "can you logout", action: "exitSession" },
+  { verb: "can you log out", action: "exitSession" },
+  { verb: "can you end session", action: "exitSession" },
+  { verb: "can you exit session", action: "exitSession" },
+  { verb: "could you logout", action: "exitSession" },
+  { verb: "could you log out", action: "exitSession" },
+  { verb: "could you end session", action: "exitSession" },
+  { verb: "could you exit session", action: "exitSession" },
 ];
 
 const Fuse = (await import("../../assets/fuse.js")).default;
@@ -208,12 +64,8 @@ async function parseString(str, apps) {
 
   if (window.__DEBUG === true) console.log("Ask:", str, string);
 
-  const kwSearch = new Fuse(verbs, {
-    keys: ["verb"],
-  });
-  const appSearch = new Fuse(apps, {
-    keys: ["name"],
-  });
+  const kwSearch = new Fuse(verbs, { keys: ["verb"] });
+  const appSearch = new Fuse(apps, { keys: ["name"] });
 
   let currAction, currApp;
 
@@ -292,7 +144,7 @@ async function getApps() {
 
       if (app.type === "desktop") {
         const data = await FileMappings.retrieveAllMIMEdata(
-          "Root/Desktop/" + app.item
+          "Root/Desktop/" + app.item,
         );
 
         mapping = data;
@@ -302,7 +154,7 @@ async function getApps() {
         description = data.fullName;
       } else if (app.type === "appStore") {
         const data = await FileMappings.retrieveAllMIMEdata(
-          "Registry/AppStore/" + app.item
+          "Registry/AppStore/" + app.item,
         );
 
         mapping = data;
@@ -320,7 +172,7 @@ async function getApps() {
       icon = icon in lib.icons ? lib.icons[icon] : icon;
 
       return { icon, name, description, mapping, source };
-    })
+    }),
   );
 
   return appsHtml;
@@ -345,11 +197,8 @@ const greetings = [
   "Good day to you, {U}!",
   "Good day to you too!",
 ];
-// bot responses to "you're welcome"
 const thankYous = ["Thank you!", "Thanks, {U}!"];
-// bot responses to "Thank you"
 const yourWelcomes = ["You're welcome!", "No problem!", "Thank you too!"];
-// bot responds to "how are you"
 const howAmIs = [
   "I'm doing great, {U}!",
   "I'm doing good, {U}!",
@@ -370,7 +219,6 @@ const howAmIs = [
   "I'm doing phenomenal, {U}!",
   "I'm doing terrific, {U}!",
 ];
-// Bot responses to "bye"
 const goodByes = [
   "Goodbye!",
   "See you later!",
@@ -384,7 +232,6 @@ const goodByes = [
   "See ya, {U}!",
   "Goodbye, {U}! Have a great day!",
 ];
-// bot responses to "how do you work" / "what can you do"
 const howDoIWorks = [
   "I can help you launch apps, answer questions, and more!",
   "I can help you with launching apps, answering questions, and more!",
@@ -392,7 +239,7 @@ const howDoIWorks = [
 ];
 
 const youAreRunning = [
-  "You are running Pluto {plutoVersion} (codeName}.",
+  "You are running Pluto {plutoVersion} ({codeName}).",
   "You're on {plutoVersion}! This version is known as {codeName}.",
   "You are using Pluto {plutoVersion}, codenamed {codeName}.",
 ];
@@ -401,33 +248,16 @@ function replace(str, u) {
   return str.replace("{U}", u);
 }
 
-async function ask(what) {
+async function ask(what, options = {}) {
   const vfs = await lib.loadLibrary("VirtualFS");
-
-  // get all apps
-  what = what
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-zA-Z0-9 .,!?]/g, "");
-  const apps = await getApps();
-  const data = await parseString(what, apps);
-
-  console.log("Here data", data);
+  const rawText = what; // Keep raw text for the LLM
 
   const userAccountService = core.services
     .filter((x) => x !== null)
     .find((x) => x.name === "Account");
 
   const userData = userAccountService.ref.getUserData();
-
   const u = userData.username;
-
-  if (data.action === undefined) {
-    return {
-      type: "response",
-      text: replace("I don't understand what you said, {U}.", u),
-    };
-  }
 
   function genYouAreRunning() {
     let s = youAreRunning[Math.floor(Math.random() * youAreRunning.length)];
@@ -442,13 +272,73 @@ async function ask(what) {
     return s;
   }
 
+  // ==========================================
+  // NEURAL ENGINE ON
+  // ==========================================
+  const neuralEngineService = core.services
+    .filter((x) => x !== null)
+    .find((x) => x.name === "NeuralEngine");
+
+  let neuralEngineReady = false;
+  if (neuralEngineService) {
+    const state = await neuralEngineService.ref.getState();
+    if (state.status && state.status.ready) {
+      neuralEngineReady = true;
+    }
+  }
+
+  if (neuralEngineReady && options.onUpdate && options.onFinish) {
+    try {
+      // Keep the prompt short or else the model will have a f*cking stroke
+      const systemPrompt = `You are a helpful and concise AI assistant running on Pluto OS. The user's name is ${u}. Answer in plaintext.`;
+
+      const llmMessages = [
+        { role: "system", content: systemPrompt },
+        ...(options.history || []),
+        { role: "user", content: rawText },
+      ];
+
+      await neuralEngineService.ref.streamResponse(
+        llmMessages,
+        options.onUpdate,
+        options.onFinish,
+        options.onError,
+      );
+
+      return { type: "streamed" };
+    } catch (e) {
+      console.error(
+        "Neural engine stream failed, falling back to legacy keyword logic.",
+        e,
+      );
+    }
+  }
+
+  // ==========================================
+  // FALLBACK (Neural Engine OFF)
+  // ==========================================
+  what = what
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-zA-Z0-9 .,!?]/g, "");
+
+  const apps = await getApps();
+  const data = await parseString(what, apps);
+
+  if (data.action === undefined) {
+    return {
+      type: "response",
+      text: replace("I don't understand what you said, {U}.", u),
+    };
+  }
+
   switch (data.action.action) {
     case "greeting":
       return {
         type: "response",
         text: replace(
           greetings[Math.floor(Math.random() * greetings.length)],
-          u
+          u,
         ),
       };
     case "exitSession":
@@ -462,7 +352,7 @@ async function ask(what) {
         type: "response",
         text: replace(
           yourWelcomes[Math.floor(Math.random() * yourWelcomes.length)],
-          u
+          u,
         ),
       };
     case "bye":
@@ -477,7 +367,6 @@ async function ask(what) {
         if (data.app.source === "local") {
           const appPath = "Root/Pluto/apps/" + data.app.name;
           let appName = data.app.name.split(".");
-
           appName.pop();
           appName = appName.join(".");
 
@@ -485,27 +374,19 @@ async function ask(what) {
             "data:text/javascript," +
               encodeURIComponent(await vfs.readFile(appPath)),
             false,
-            false
+            false,
           );
-          return {
-            type: "response",
-            text: `Launching local app ${appName}.`,
-          };
+          return { type: "response", text: `Launching local app ${appName}.` };
         }
       }
-
       await data.app.mapping.onClick(core);
-
-      return {
-        type: "response",
-        text: `Launching ${data.app.name}.`,
-      };
+      return { type: "response", text: `Launching ${data.app.name}.` };
     case "howWorks":
       return {
         type: "response",
         text: replace(
           howDoIWorks[Math.floor(Math.random() * howDoIWorks.length)],
-          u
+          u,
         ),
       };
     case "howAmI":
@@ -524,7 +405,7 @@ let lib, core;
 export default {
   name: "Assistant Library",
   description: "Handles assistant asking questions and stuff",
-  ver: "v1.6.2", // Supports minimum Core version of v1.6.2
+  ver: "v1.7.0",
   type: "library",
   init(l, c) {
     lib = l;

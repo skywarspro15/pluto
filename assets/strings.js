@@ -22,6 +22,8 @@ export default {
     network: "Network",
     applications: "Applications",
     security: "Security",
+    ai_short: "Neural",
+    ai: "Neural Engine (On-Device AI)",
     theme: "Theme",
     favorite: "Favorite",
     unfavorite: "Unfavorite",

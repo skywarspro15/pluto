@@ -40,6 +40,9 @@ export default {
       webBrowser: "Web browser",
       deviceType: "Device type",
       webProtocol: "Web protocol",
+      gpuSupported: "WebGPU supported",
+      gpuVendor: "GPU vendor",
+      gpuArchitecture: "GPU architecture",
       webHost: "Web host",
       plutoInfo: "Pluto Information",
       storageUsed: "Storage used",
@@ -77,6 +80,17 @@ export default {
       localApps: "Local applications",
       knownPackageList: "Loaded packages",
       appStoreOpenToSeeApps: "Open the App Store to see installed applications",
+      neuralEngineWarn:
+        "Neural Engine is experimental and is highly dependent on your hardware configuration.",
+      neuralEngineIncompatible:
+        "Your device or web browser does not support WebGPU, which is needed for Neural Engine.",
+      neuralEngineStatus: "Neural Engine Status",
+      neuralEngineStatusMessage: "Status",
+      neuralEngineStatusReady: "Ready",
+      neuralEngineLoadProgress: "Loaded",
+      neuralEngineDescription:
+        "Pluto's Neural Engine will use your GPU to run artificial intelligence tasks locally. A dedicated GPU or a good iGPU is recommended. May impact RAM usage and boot times.",
+      useNeuralEngine: "Enable Neural Engine (requires restart)",
     },
     de_DE: {
       thisSystem: "Dieses System",
@@ -159,6 +173,10 @@ export default {
       securityTableItemName: "Pangalan",
       securityTableItemSafe: "Ligtas",
       securityTableItemDelete: "I-delete ang aplikasyon",
+      neuralEngineWarn:
+        "Ang Neural Engine ay eksperimental at nakadepende nang malaki sa configuration ng iyong hardware.",
+      neuralEngineIncompatible:
+        "Hindi sinusuportahan ng iyong device o web browser ang WebGPU, na kailangan para sa Neural Engine.",
     },
     ja_JP: {
       thisSystem: "このシステム",
@@ -306,6 +324,11 @@ export default {
     function setupSettingsApp() {
       wrapper.innerHTML = "";
       let nb = new Html("div").classOn("notify-box").appendTo(wrapper);
+      let statusUpdateEvent;
+
+      const neuralEngineService = Root.Core.services
+        .filter((x) => x !== null)
+        .find((x) => x.name === "NeuralEngine");
 
       const pagesList = [
         {
@@ -356,6 +379,14 @@ export default {
             pages.security();
           },
         },
+        {
+          icon: Root.Lib.icons.ai,
+          text: Root.Lib.getString("ai_short"),
+          title: Root.Lib.getString("ai"),
+          onclick() {
+            pages.ai();
+          },
+        },
       ];
 
       if (desktopConfig["shh"]) {
@@ -399,6 +430,12 @@ export default {
               await vfs.readFile("Root/Pluto/config/appearanceConfig.json"),
             ),
           );
+          if (statusUpdateEvent) {
+            document.removeEventListener(
+              "Pluto.NeuralEngine.StatusUpdate",
+              statusUpdateEvent,
+            );
+          }
         },
         async account() {
           await this.clear("account");
@@ -702,6 +739,8 @@ export default {
             os = Object.assign({ name: "Unknown", version: 0 }, os);
           }
 
+          const neuralEngineState = await neuralEngineService.ref.getState();
+
           const yourDevice = new Html("div")
             .class("card-box", "list", "max")
             .appendMany(
@@ -736,6 +775,33 @@ export default {
                 .appendMany(
                   new Html().text(Root.Lib.getString("webProtocol")),
                   new Html().class("label").text(webProtocol),
+                ),
+              // WebGPU support
+              new Html()
+                .class("item")
+                .appendMany(
+                  new Html().text(Root.Lib.getString("gpuSupported")),
+                  new Html()
+                    .class("label")
+                    .text(neuralEngineState.compatible ? "Yes" : "No"),
+                ),
+              // GPU Manufacturer
+              new Html()
+                .class("item")
+                .appendMany(
+                  new Html().text(Root.Lib.getString("gpuVendor")),
+                  new Html()
+                    .class("label")
+                    .text(neuralEngineState.gpuInfo.vendor.toUpperCase()),
+                ),
+              // GPU Architecture
+              new Html()
+                .class("item")
+                .appendMany(
+                  new Html().text(Root.Lib.getString("gpuArchitecture")),
+                  new Html()
+                    .class("label")
+                    .text(neuralEngineState.gpuInfo.architecture.toUpperCase()),
                 ),
               // Host
               new Html()
@@ -1557,6 +1623,133 @@ export default {
                 })
                 .text(Root.Lib.getString("securityCheckEveryStartup")),
             )
+            .appendTo(container);
+        },
+        async ai() {
+          await this.clear("ai");
+          makeHeading("h1", Root.Lib.getString("ai"));
+
+          let neuralEngineState = await neuralEngineService.ref.getState();
+
+          if (neuralEngineState.compatible) {
+            makeAlert("info", Root.Lib.getString("neuralEngineWarn"));
+
+            makeHeading("h2", Root.Lib.getString("neuralEngineStatus"));
+
+            const statusElm = new Html("div")
+              .class("card-box", "list", "max")
+              .appendMany(
+                new Html()
+                  .class("item")
+                  .appendMany(
+                    new Html().text(Root.Lib.getString("gpuSupported")),
+                    new Html()
+                      .class("label")
+                      .text(neuralEngineState.compatible ? "Yes" : "No"),
+                  ),
+              )
+              .appendTo(container);
+
+            let readyLabel = new Html()
+              .class("item")
+              .appendMany(
+                new Html().text(Root.Lib.getString("neuralEngineStatusReady")),
+              )
+              .appendTo(statusElm);
+
+            let readyText = new Html()
+              .class("label")
+              .text(neuralEngineState.status.ready ? "Yes" : "No")
+              .appendTo(readyLabel);
+
+            let statusLabel = new Html()
+              .class("item")
+              .appendMany(
+                new Html().text(
+                  Root.Lib.getString("neuralEngineStatusMessage"),
+                ),
+              )
+              .appendTo(statusElm);
+
+            let statusText = new Html()
+              .class("label")
+              .text(neuralEngineState.status.message)
+              .appendTo(statusLabel);
+
+            let progressLabel = new Html()
+              .class("item")
+              .appendMany(
+                new Html().text(Root.Lib.getString("neuralEngineLoadProgress")),
+              )
+              .appendTo(statusElm);
+
+            let progressText = new Html()
+              .class("label")
+              .text(`${parseInt(neuralEngineState.status.progress * 100)}%`)
+              .appendTo(progressLabel);
+
+            statusUpdateEvent = async (e) => {
+              statusText.text(e.detail);
+              neuralEngineState = await neuralEngineService.ref.getState();
+              readyText.text(neuralEngineState.status.ready ? "Yes" : "No");
+              progressText.text(
+                `${parseInt(neuralEngineState.status.progress * 100)}%`,
+              );
+            };
+
+            document.addEventListener(
+              "Pluto.NeuralEngine.StatusUpdate",
+              statusUpdateEvent,
+            );
+          } else {
+            makeAlert("error", Root.Lib.getString("neuralEngineIncompatible"));
+          }
+
+          let settingsConfig = JSON.parse(
+            await vfs.readFile("Root/Pluto/config/settingsConfig.json"),
+          );
+          console.log(settingsConfig);
+          if (settingsConfig === null) {
+            await vfs.writeFile(
+              "Root/Pluto/config/settingsConfig.json",
+              `{"useNeuralEngine": false}`,
+            );
+            settingsConfig = JSON.parse(
+              await vfs.readFile("Root/Pluto/config/settingsConfig.json"),
+            );
+          }
+
+          let useNeuralEngineSpan = new Html("span").appendTo(container);
+
+          let neuralEngineCheckbox = new Html("input")
+            .attr({
+              type: "checkbox",
+              id: Root.PID + "lc",
+              checked: settingsConfig.useNeuralEngine === true ? true : null,
+            })
+            .on("input", async (e) => {
+              settingsConfig.useNeuralEngine = e.target.checked;
+              await vfs.writeFile(
+                "Root/Pluto/config/settingsConfig.json",
+                JSON.stringify(settingsConfig),
+              );
+
+              Notify.show(
+                "Restart required",
+                "Restart Pluto for changes to take effect.",
+                nb,
+              );
+            })
+            .appendTo(useNeuralEngineSpan);
+
+          new Html("label")
+            .attr({
+              for: Root.PID + "lc",
+            })
+            .text(Root.Lib.getString("useNeuralEngine"))
+            .appendTo(useNeuralEngineSpan);
+          new Html("p")
+            .text(Root.Lib.getString("neuralEngineDescription"))
             .appendTo(container);
         },
         async secret() {

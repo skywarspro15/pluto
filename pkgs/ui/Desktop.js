@@ -742,10 +742,14 @@ export default {
       .filter((x) => x !== null)
       .find((x) => x.name === "NeuralEngine");
 
-    const neuralEngineState = await neuralEngineService.ref.getState();
+    let neuralEngineState = await neuralEngineService.ref.getState();
     console.log("Neural Engine State", neuralEngineState);
 
     console.log("Neural Engine", neuralEngineService);
+
+    document.addEventListener("Pluto.NeuralEngine.StatusUpdate", async () => {
+      neuralEngineState = await neuralEngineService.ref.getState();
+    });
 
     async function toggleAssistant() {
       if (menuIsToggling) {
@@ -789,6 +793,7 @@ export default {
             .appendMany(chatDiv, chatInput);
 
           let firstMessage = true;
+          let conversationHistory = []; // Preserves chat history for current session
 
           const apps = await Assistant.getApps();
 
@@ -804,76 +809,50 @@ export default {
             "Launch",
             "Start",
             "Can you start",
-            "Can you launch",
             "Can you open",
-            "Can you run",
-            "Will you start",
-            "Will you launch",
-            "Will you open",
-            "Will you run",
           ];
-          const logOut = [
-            "Logout",
-            "Log out",
-            "End this session",
-            "Exit this session",
-          ];
-          const versions = [
-            "What version of Pluto is this?",
-            "What Pluto version am I running?",
-          ];
+          const logOut = ["Logout", "Log out", "End this session"];
+          const versions = ["What version of Pluto is this?"];
 
           function makeQuestionButton(text) {
             let t = text;
-
-            if (t.includes("{greeting}")) {
+            if (t.includes("{greeting}"))
               t = t.replace(
                 "{greeting}",
                 greetings[Math.floor(greetings.length * Math.random())],
               );
-            }
-            if (t.includes("{whatCanYouDo}")) {
+            if (t.includes("{whatCanYouDo}"))
               t = t.replace(
                 "{whatCanYouDo}",
                 whatCanYouDo[Math.floor(Math.random() * whatCanYouDo.length)],
               );
-            }
             if (t.includes("{launchRandomApp}")) {
               const launchStr =
                 launch[Math.floor(Math.random() * launch.length)];
               const randomApp =
                 apps[Math.floor(apps.length * Math.random())].name;
-
-              if (launchStr.includes("you")) {
-                t = t.replace(
-                  "{launchRandomApp}",
-                  `${launchStr} ${randomApp}?`,
-                );
-              } else {
-                t = t.replace(
-                  "{launchRandomApp}",
-                  `${launchStr} ${randomApp}.`,
-                );
-              }
+              t = t.replace(
+                "{launchRandomApp}",
+                launchStr.includes("you")
+                  ? `${launchStr} ${randomApp}?`
+                  : `${launchStr} ${randomApp}.`,
+              );
             }
-            if (t.includes("{howAreYou}")) {
+            if (t.includes("{howAreYou}"))
               t = t.replace(
                 "{howAreYou}",
                 howAreYou[Math.floor(Math.random() * howAreYou.length)],
               );
-            }
-            if (t.includes("{logOut}")) {
+            if (t.includes("{logOut}"))
               t = t.replace(
                 "{logOut}",
                 logOut[Math.floor(Math.random() * logOut.length)],
               );
-            }
-            if (t.includes("{version}")) {
+            if (t.includes("{version}"))
               t = t.replace(
                 "{version}",
                 versions[Math.floor(Math.random() * versions.length)],
               );
-            }
 
             return new Html("button")
               .class("row", "gap", "fc")
@@ -883,9 +862,7 @@ export default {
                   .html(Root.Lib.icons.send.replace(/"24"/g, '"16"')),
                 new Html("span").text(t),
               )
-              .on("click", (e) => {
-                ask(t);
-              });
+              .on("click", () => ask(t));
           }
 
           function shuffleArray(array) {
@@ -896,16 +873,13 @@ export default {
           }
 
           let randomQuestions = [];
-
           randomQuestions.push(makeQuestionButton("{whatCanYouDo}?"));
           randomQuestions.push(makeQuestionButton("{howAreYou}?"));
           randomQuestions.push(makeQuestionButton("{logOut}."));
           randomQuestions.push(makeQuestionButton("{greeting}!"));
           randomQuestions.push(makeQuestionButton("{launchRandomApp}"));
           randomQuestions.push(makeQuestionButton("{version}"));
-
           shuffleArray(randomQuestions);
-
           randomQuestions = randomQuestions.slice(0, 3);
 
           const welcomeChatDiv = new Html("div")
@@ -923,7 +897,9 @@ export default {
                 .styleJs({ textAlign: "center" })
                 .html(
                   neuralEngineState.compatible
-                    ? "Work in progress. Ask me to help with actions on Pluto.<br>Neural Engine is available. Enable in Settings."
+                    ? neuralEngineState.status.ready
+                      ? "Work in progress. Ask me to help with actions on Pluto.<br>Neural Engine is in use."
+                      : "Work in progress. Ask me to help with actions on Pluto.<br>Neural Engine is off. Enable in Settings for better responses."
                     : "Work in progress. Ask me to help with actions on Pluto.<br>Neural Engine not supported on this device.",
                 ),
               new Html("div").class("space"),
@@ -931,47 +907,95 @@ export default {
               ...randomQuestions,
             )
             .appendTo(chatDiv);
-          chatDiv.style({ "overflow-y": "hidden" });
 
+          chatDiv.style({ "overflow-y": "hidden" });
           welcomeChatDiv.on("animationend", () => {
             chatDiv.style({ "overflow-y": "auto" });
           });
 
+          function formatChatText(text) {
+            if (!text) return "";
+
+            let safeText = Root.Lib.escapeHtml(text);
+
+            safeText = safeText
+              .replace(/&lt;think&gt;/gi, "<think>")
+              .replace(/&lt;\/think&gt;/gi, "</think>");
+
+            safeText = safeText.replace(
+              /<think>([\s\S]*?)(<\/think>|$)/gi,
+              (match, content, closeTag) => {
+                const isOpen = closeTag === "" ? "open" : "";
+                return `<details class="think-dropdown" ${isOpen} style="margin-bottom: 0.5rem; opacity: 0.85;">
+                        <summary style="cursor: pointer; font-weight: 600; font-size: 0.85em; user-select: none;">Thinking...</summary>
+                        <div style="font-size: 0.9em; padding-left: 0.5rem; border-left: 2px solid var(--outline); margin-top: 0.25rem; white-space: pre-wrap; color: inherit;">${content.trim()}</div>
+                      </details>`;
+              },
+            );
+
+            // Code blocks
+            safeText = safeText.replace(
+              /```(\w*)\n([\s\S]*?)(?:```|$)/g,
+              '<pre style="background: rgba(128,128,128,0.15); padding: 0.5rem; border-radius: 4px; overflow-x: auto; margin: 0.5rem 0;"><code>$2</code></pre>',
+            );
+            // Inline code
+            safeText = safeText.replace(
+              /`([^`]+)`/g,
+              '<code style="background: rgba(128,128,128,0.15); padding: 0.1rem 0.3rem; border-radius: 4px;">$1</code>',
+            );
+            // Bold
+            safeText = safeText.replace(
+              /\*\*(.*?)\*\*/g,
+              "<strong>$1</strong>",
+            );
+            // Italic
+            safeText = safeText.replace(/\*([^\*]+)\*/g, "<em>$1</em>");
+
+            return safeText;
+          }
+
           function addMessage(side = 0, text) {
             if (firstMessage === true) {
               chatDiv.clear();
+              conversationHistory = [];
               firstMessage = false;
             }
             let background, layout, classToAdd;
 
             switch (side) {
               case 0:
-                // left side, blue background
                 background = "var(--primary)";
                 layout = "flex-start";
                 classToAdd = "slideInFromLeft";
                 break;
               case 1:
-                // right side, grey background
                 background = "var(--neutral)";
                 layout = "flex-end";
-                // classToAdd = "slideInFromRight";
                 classToAdd = "slideInFromRight";
                 break;
             }
 
-            chatDiv.appendMany(
-              new Html("div")
-                .styleJs({
-                  display: "flex",
-                  alignSelf: layout,
-                  background,
-                  borderRadius: "16px",
-                  padding: "8px 14px",
-                })
-                .class(classToAdd)
-                .text(text),
-            );
+            const msgHtml = new Html("div")
+              .styleJs({
+                display: "flex",
+                flexDirection: "column",
+                alignSelf: layout,
+                background,
+                borderRadius: "16px",
+                padding: "8px 14px",
+                maxWidth: "85%",
+                wordBreak: "break-word",
+                whiteSpace: "pre-wrap", // Allows newlines without needing <br> replacements
+              })
+              .class(classToAdd)
+              .html(formatChatText(text));
+
+            chatDiv.appendMany(msgHtml);
+
+            return {
+              elm: msgHtml,
+              update: (newText) => msgHtml.html(formatChatText(newText)),
+            };
           }
 
           async function ask(text = chatInputText.getValue()) {
@@ -981,13 +1005,42 @@ export default {
 
             addMessage(1, text);
 
+            let assistantMessage = addMessage(0, "...");
+
             setTimeout(
               async () => {
-                const result = await Assistant.ask(text);
-                switch (result.type) {
-                  case "response":
-                    addMessage(0, result.text);
-                    break;
+                const options = {
+                  history: conversationHistory,
+                  onUpdate: (chunk) => {
+                    assistantMessage.update(chunk); // Dynamically render formatting and <think> blocks
+                    chatDiv.elm.scrollTop = chatDiv.elm.scrollHeight;
+                  },
+                  onFinish: (finalResponse) => {
+                    conversationHistory.push({ role: "user", content: text });
+                    conversationHistory.push({
+                      role: "assistant",
+                      content: finalResponse,
+                    });
+                    chatDiv.elm.scrollTop = chatDiv.elm.scrollHeight;
+                  },
+                  onError: (err) => {
+                    assistantMessage.update(
+                      "An error occurred generating a response.",
+                    );
+                    console.error("NeuralEngine stream error:", err);
+                  },
+                };
+
+                const result = await Assistant.ask(text, options);
+
+                // If it wasn't streamed (Fallback legacy mode)
+                if (result && result.type === "response") {
+                  assistantMessage.update(result.text);
+                  conversationHistory.push({ role: "user", content: text });
+                  conversationHistory.push({
+                    role: "assistant",
+                    content: result.text,
+                  });
                 }
 
                 chatDiv.elm.scrollTop = chatDiv.elm.scrollHeight;
@@ -1018,7 +1071,7 @@ export default {
           menuElm.classOn("closing");
           setTimeout(() => {
             menuElm.cleanup();
-            menuElm = null; // Reset menu element reference
+            menuElm = null;
             menuIsToggling = false;
           }, 500);
         }

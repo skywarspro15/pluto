@@ -148,6 +148,18 @@ export default {
         );
         if (
           settingsConfig !== undefined &&
+          settingsConfig.useNeuralEngine !== undefined &&
+          settingsConfig.useNeuralEngine == true
+        ) {
+          setTimeout(() => {
+            const neuralEngineService = Root.Core.services
+              .filter((x) => x !== null)
+              .find((x) => x.name === "NeuralEngine");
+            neuralEngineService.ref.start();
+          }, 500);
+        }
+        if (
+          settingsConfig !== undefined &&
           settingsConfig.bootApp !== undefined
         ) {
           let appMapping = await FileMapping.retrieveAllMIMEdata(
